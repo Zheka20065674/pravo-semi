@@ -24,7 +24,7 @@ const documents = [
   ...documentResearchQueue.map((doc) => ({
     id: doc.id,
     title: doc.title,
-    category: "В разработке",
+    category: doc.id.startsWith("child-") ? "Дети" : "Суд",
     description: doc.status,
     status: "Исследование",
   })),
@@ -144,7 +144,7 @@ export default function App() {
             <h1>{isKk ? "Отбасы құқығы — түсінікті тілмен" : <>Право семьи — <em>понятным</em> языком</>}</h1>
             <p className="hero-lead">{isKk ? "Отбасылық құқықтық мәселелерді түсініңіз, ықтимал әрекеттерді салыстырыңыз және маңызды шешімдерге дайындалыңыз." : "Разбирайтесь в семейных правоотношениях, сравнивайте возможные действия и готовьтесь к юридически значимым решениям."}</p>
             <div className="hero-actions"><button className="btn btn-primary" onClick={() => goTo("assistant")}>{isKk ? "Жағдайды талдау" : "Разобрать ситуацию"} <span>↗</span></button><button className="btn btn-text" onClick={() => goTo("directions")}>{isKk ? "Бағыттарды қарау" : "Изучить направления"} <span>→</span></button></div>
-            <div className="hero-trust"><span>✓ Проверка по законодательству РК</span><span>✓ Нейтральное объяснение</span><span>✓ Русский / Қазақша</span></div>
+            <div className="hero-trust"><span>✓ Правовая информация с указанием источников</span><span>✓ Нейтральное объяснение</span><span>✓ Русский / Қазақша</span></div>
           </div>
           <div className="hero-visual"><div className="visual-orbit orbit-one"></div><div className="visual-orbit orbit-two"></div><div className="visual-card"><div className="visual-symbol">§</div><div className="visual-line long"></div><div className="visual-line"></div><div className="visual-line short"></div><div className="visual-bottom"><span>FAMILY LAW</span><span>№ 01</span></div></div><div className="floating-note"><span>✦</span><div><b>Правовая ясность</b><small>Начинается с понимания</small></div></div><div className="visual-caption">ЗАКОН • ПРАВА • СЕМЬЯ</div></div>
         </section>
