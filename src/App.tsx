@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { documentDefinitions, documentResearchQueue } from "./data/documentRequirements";
 
 type Lang = "ru" | "kk";
 type Topic = "divorce" | "property" | "alimony" | "child" | "marriage";
@@ -13,14 +14,20 @@ const topics: { id: Topic; icon: string; title: string; description: string }[] 
 ];
 
 const documents = [
-  { title: "Заявление о регистрации брака", category: "Брак", description: "Справочная структура заявления и перечень вопросов перед обращением.", status: "В разработке" },
-  { title: "Брачный договор", category: "Брак", description: "Структура условий об имущественных правах и обязанностях супругов.", status: "В разработке" },
-  { title: "Соглашение о разделе имущества", category: "Имущество", description: "Перечень условий, которые следует согласовать и проверить.", status: "В разработке" },
-  { title: "Исковое заявление о расторжении брака", category: "Развод", description: "Состав сведений и приложений для подготовки проекта иска.", status: "В разработке" },
-  { title: "Заявление о взыскании алиментов", category: "Алименты", description: "Общие сведения о требованиях и документах, которые могут понадобиться.", status: "В разработке" },
-  { title: "Соглашение о порядке общения с ребёнком", category: "Дети", description: "Вопросы графика общения и учёта интересов ребёнка.", status: "В разработке" },
-  { title: "Заявление об определении места жительства ребёнка", category: "Дети", description: "Структура обращения и обстоятельства, имеющие значение для спора.", status: "В разработке" },
-  { title: "Возражения на исковое заявление", category: "Суд", description: "Структура позиции стороны и перечень доказательств.", status: "В разработке" },
+  ...documentDefinitions.map((doc) => ({
+    id: doc.id,
+    title: doc.title,
+    category: doc.category,
+    description: doc.purpose,
+    status: doc.status === "published" ? "Опубликован" : "Правовая карта: черновик",
+  })),
+  ...documentResearchQueue.map((doc) => ({
+    id: doc.id,
+    title: doc.title,
+    category: "В разработке",
+    description: doc.status,
+    status: "Исследование",
+  })),
 ];
 
 const scenarioQuestions: Record<Topic, { title: string; question: string; options: string[] }[]> = {
@@ -66,6 +73,7 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState("");
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
 
   const isKk = language === "kk";
   const filteredDocuments = useMemo(() => documents.filter((doc) =>
@@ -75,6 +83,7 @@ export default function App() {
 
   const questions = scenarioQuestions[selectedTopic];
   const topicName = topics.find((topic) => topic.id === selectedTopic)?.title ?? "Правовой вопрос";
+  const selectedDocument = documentDefinitions.find((doc) => doc.id === selectedDocumentId) ?? null;
 
   function goTo(id: string) {
     setActiveNav(id);
@@ -156,7 +165,20 @@ export default function App() {
 
         <section className="section documents-section" id="documents"><div className="section-heading"><div><p className="eyebrow">03 / БИБЛИОТЕКА</p><h2>Документы и правовые шаблоны</h2></div><p className="section-intro">Структурированная библиотека документов для подготовки к юридически значимым действиям.</p></div>
           <div className="document-tools"><div className="search-box"><span>⌕</span><input aria-label="Поиск документов" placeholder="Найти документ или тему..." value={search} onChange={(e) => setSearch(e.target.value)} /></div><div className="category-filters">{categories.map((item) => <button key={item} className={category === item ? "filter-chip selected" : "filter-chip"} onClick={() => setCategory(item)}>{item}</button>)}</div></div>
-          <div className="document-grid">{filteredDocuments.map((doc) => <article className="document-card" key={doc.title}><div className="document-card-top"><span className="file-icon">▤</span><span className="status-pill">{doc.status}</span></div><small>{doc.category.toUpperCase()}</small><h3>{doc.title}</h3><p>{doc.description}</p><button onClick={() => setNotice("Шаблон «" + doc.title + "» будет добавлен после правовой проверки и подготовки актуальной формы.")}>Подробнее <span>→</span></button></article>)}</div>
+          <div className="document-grid">{filteredDocuments.map((doc) => <article className="document-card" key={doc.title}><div className="document-card-top"><span className="file-icon">▤</span><span className="status-pill">{doc.status}</span></div><small>{doc.category.toUpperCase()}</small><h3>{doc.title}</h3><p>{doc.description}</p><button onClick={() => { if (documentDefinitions.some((item) => item.id === doc.id)) { setSelectedDocumentId(doc.id); setNotice(""); } else { setNotice("Для документа «" + doc.title + "» ещё формируется отдельная правовая карта требований."); } }}>Открыть требования <span>→</span></button></article>)}</div>
+          {selectedDocument && <section className="doc-detail" aria-live="polite">
+            <div className="doc-detail-head"><div><p className="eyebrow">ПРАВОВАЯ КАРТА / ЧЕРНОВИК</p><h3>{selectedDocument.title}</h3><p>{selectedDocument.purpose}</p></div><button className="btn btn-outline" onClick={() => setSelectedDocumentId(null)}>Закрыть</button></div>
+            <div className="doc-detail-meta"><span className="status-pill">Не является готовым шаблоном</span><span>Источники проверены: 13.11.2026</span></div>
+            <div className="doc-detail-grid">
+              <div><h4>Правовые источники</h4><ul>{selectedDocument.legalSources.map((source) => <li key={source.article + source.title}><b>{source.act}, ст. {source.article}</b><span>{source.title}</span><a href={source.url} target="_blank" rel="noreferrer">Открыть в ИПС «Әділет» ↗</a></li>)}</ul></div>
+              <div><h4>Содержание документа</h4><ul>{selectedDocument.contentRequirements.map((item) => <li key={item.id}><b>{item.label}</b><span>{item.explanation}</span><small>{item.kind === "mandatory" ? "Обязательно" : item.kind === "conditional" ? "При определённых условиях" : "Рекомендация"}</small></li>)}</ul></div>
+              <div><h4>Форма и удостоверение</h4><ul>{selectedDocument.formRequirements.map((item) => <li key={item.id}><b>{item.label}</b><span>{item.explanation}</span></li>)}</ul></div>
+              <div><h4>Приложения и подтверждения</h4><ul>{selectedDocument.attachmentRequirements.map((item) => <li key={item.id}><b>{item.label}</b><span>{item.explanation}</span></li>)}</ul></div>
+              <div><h4>Процессуальные условия</h4><ul>{selectedDocument.processNotes.map((item) => <li key={item.id}><b>{item.label}</b><span>{item.explanation}</span></li>)}</ul></div>
+              <div><h4>Ограничения и риски</h4><ul>{selectedDocument.limitations.map((item) => <li key={item}><span>{item}</span></li>)}</ul></div>
+            </div>
+            <p className="doc-detail-warning">Эта карта — внутренняя проектная основа и ещё не прошла полную юридическую экспертизу. Система пока не формирует документ и не подтверждает его соответствие всем требованиям конкретного дела.</p>
+          </section>}
           {filteredDocuments.length === 0 && <div className="empty-state">По вашему запросу документы не найдены. Попробуйте изменить поиск или категорию.</div>}
           {notice && <div className="inline-notice" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Закрыть">×</button></div>}
         </section>
