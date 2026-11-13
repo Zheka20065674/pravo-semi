@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { documentDefinitions, documentResearchQueue } from "./data/documentRequirements";
 
 type Lang = "ru" | "kk";
@@ -411,6 +411,15 @@ export default function App() {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
 
   const isKk = language === "kk";
+  useEffect(() => {
+    document.documentElement.lang = language;
+    const description = document.querySelector('meta[name="description"]');
+    description?.setAttribute("content", language === "kk"
+      ? "«Право Семьи» — Қазақстан Республикасының отбасы құқығы туралы ақпараттық платформа: құқықтық сценарийлер, құжаттар және түсінікті нұсқаулықтар."
+      : "Право Семьи — информационная платформа о семейном праве Республики Казахстан: правовые сценарии, документы и понятные инструкции.");
+    const locale = document.querySelector('meta[property="og:locale"]');
+    locale?.setAttribute("content", language === "kk" ? "kk_KZ" : "ru_KZ");
+  }, [language]);
   const filteredDocuments = useMemo(() => documents.map((doc) => isKk ? {
     ...doc,
     title: translateCardText(doc.id, "title", doc.title),
