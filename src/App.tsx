@@ -13,7 +13,98 @@ const topics: { id: Topic; icon: string; title: string; description: string }[] 
   { id: "child", icon: "🧒", title: "Права ребёнка", description: "Место жительства, общение с родителями и защита интересов ребёнка." },
 ];
 
-const documents = [
+const documents = [;
+
+const topicsKk: { id: Topic; icon: string; title: string; description: string }[] = [
+  { id: "marriage", icon: "💍", title: "Некеге тұру", description: "Некені тіркеу талаптары, қажетті құжаттар, неке шарты және мүліктік мәселелер." },
+  { id: "divorce", icon: "⚖️", title: "Некені бұзу", description: "Некені бұзу жолдары, іс-қимыл тәртібі және рәсімге дайындық." },
+  { id: "property", icon: "🏠", title: "Мүлікті бөлу", description: "Ортақ және жеке мүлік, келісім және сот дауы." },
+  { id: "alimony", icon: "🤝", title: "Алимент", description: "Балалар мен отбасының басқа мүшелерін асырау, келісім жасау және алимент өндіріп алу." },
+  { id: "child", icon: "🧒", title: "Баланың құқықтары", description: "Баланың тұрғылықты жері, ата-анасымен араласуы және оның мүдделерін қорғау." },
+];
+
+const scenarioQuestionsKk: Record<Topic, { title: string; question: string; options: string[] }[]> = {
+  marriage: [
+    { title: "Сіздің жағдайыңыз", question: "Қандай мәселені нақтылағыңыз келеді?", options: ["Некеге тұру талаптары", "Қандай құжаттарды дайындау керек", "Неке шарты", "Некенің мүліктік салдары"] },
+    { title: "Тараптардың келісімі", question: "Екі тарап та таңдалған нұсқамен келіседі ме?", options: ["Иә", "Жоқ", "Әзірге шешім қабылданған жоқ"] },
+    { title: "Қосымша мән-жайлар", question: "Ескеруді қажет ететін мүлік немесе өзге де мән-жайлар бар ма?", options: ["Бар", "Жоқ", "Нақты білмеймін"] },
+  ],
+  divorce: [
+    { title: "Мән-жайлар", question: "Ортақ кәмелетке толмаған балалар бар ма?", options: ["Иә", "Жоқ", "Құқықтық мәртебесін нақтылау қажет"] },
+    { title: "Тараптардың ұстанымы", question: "Некені бұзуға өзара келісім бар ма?", options: ["Иә", "Жоқ", "Келісім жоқ / белгісіз"] },
+    { title: "Даулы мәселелер", question: "Мүлікті бөлу, алимент немесе балаларға қатысты дау бар ма?", options: ["Иә", "Жоқ", "Әзірге шешім қабылданған жоқ"] },
+  ],
+  property: [
+    { title: "Даудың нысанасы", question: "Мәселе қандай мүлікке қатысты?", options: ["Жылжымайтын мүлік", "Автомобиль", "Ақша / салымдар", "Мүліктің бірнеше түрі", "Басқа"] },
+    { title: "Мүлікті иелену негізі", question: "Мүлік қашан және қандай негізде сатып алынды?", options: ["Неке кезінде", "Некеге дейін", "Сыйға немесе мұраға алынған", "Әртүрлі негіздер бар", "Білмеймін"] },
+    { title: "Тараптардың ұстанымы", question: "Мүлікті бөлуге қатысты келісім бар ма?", options: ["Иә", "Жоқ", "Ішінара келісім бар"] },
+  ],
+  alimony: [
+    { title: "Алушы", question: "Асырау мәселесі кімге қатысты?", options: ["Кәмелетке толмаған балаға", "Кәмелетке толған балаға", "Жұбайына / бұрынғы жұбайына", "Отбасының басқа мүшесіне"] },
+    { title: "Қазіргі жағдай", question: "Қолданыстағы келісім немесе сот актісі бар ма?", options: ["Иә", "Жоқ", "Білмеймін"] },
+    { title: "Мақсат", question: "Нені анықтау қажет?", options: ["Келісім жасау", "Алимент өндіріп алу тәртібін анықтау", "Қолданыстағы тәртіпті өзгерту", "Берешек мәселесін анықтау"] },
+  ],
+  child: [
+    { title: "Мәселенің мәні", question: "Балаға қатысты қандай мәселені қарау қажет?", options: ["Тұрғылықты жері", "Араласу тәртібі", "Тәрбиесіне қатысу", "Баланың құқықтарын қорғау"] },
+    { title: "Ата-аналардың ұстанымы", question: "Ата-аналар арасында келісім бар ма?", options: ["Иә", "Жоқ", "Ішінара келісім бар"] },
+    { title: "Қолданыстағы тәртіп", question: "Осы мәселе бойынша келісім немесе сот шешімі бар ма?", options: ["Иә", "Жоқ", "Білмеймін"] },
+  ],
+};
+
+const scenarioGuidanceKk: Record<Topic, { heading: string; checks: string[]; caution: string }> = {
+  marriage: {
+    heading: "Некені тіркеу алдында нені тексеру керек",
+    checks: [
+      "Некеге тұру жасы, ерікті келісім және некені тіркеуге кедергі келтіретін мән-жайлардың бар-жоғы.",
+      "Қажетті құжаттар тізбесі және тіркеуші органға жүгіну тәртібі.",
+      "Неке шартының қажеттілігі және тараптар алдын ала реттегісі келетін мәселелер.",
+      "Жеке құқықтық бағалауды қажет ететін мүліктік немесе өзге де мән-жайлар.",
+    ],
+    caution: "Сауалнама некені тіркеуге заңды кедергілердің бар-жоғын анықтамайды. Бұл құжаттар мен қолданыстағы заңнама негізінде тексеріледі.",
+  },
+  divorce: {
+    heading: "Рәсімді таңдау үшін нені анықтау маңызды",
+    checks: [
+      "Ортақ кәмелетке толмаған балалардың бар-жоғы және оларға қатысты даулы мәселелер.",
+      "Ерлі-зайыптылардың некені бұзу жөніндегі ұстанымдарының сәйкес келуі.",
+      "Мүлікті бөлу, отбасы мүшелерін асырау немесе өзге де талаптар бойынша дау бар-жоғы.",
+      "Некенің тіркелгенін және істің маңызды мән-жайларын растайтын құжаттар.",
+    ],
+    caution: "Балалардың болуы, даудың немесе келіспеушіліктің болуы некені бұзу тәртібіне әсер етуі мүмкін. Нақты рәсім мән-жайлар мен заңның қолданыстағы редакциясы тексерілгеннен кейін айқындалады.",
+  },
+  property: {
+    heading: "Мүлікке қатысты қандай мәліметтерді жинау керек",
+    checks: [
+      "Әрбір мүліктің қашан, кімнің және қандай негізде сатып алынғаны.",
+      "Құқық белгілейтін құжаттар, шарттар, төлем құжаттары және құқықты тіркеу туралы мәліметтер.",
+      "Мүлікті жеке, ортақ немесе аралас қаражат есебінен сатып алынған деп тануға негіздердің бар-жоғы.",
+      "Кредиттердің, кепілдердің, тыйым салулардың, үшінші тұлғалардың құқықтарының немесе ерлі-зайыптылар келісімдерінің болуы.",
+    ],
+    caution: "Мүліктің неке кезінде сатып алынуының өзі барлық мән-жай тексерілмей, оның құқықтық режимін түпкілікті анықтауға жеткіліксіз.",
+  },
+  alimony: {
+    heading: "Қандай мән-жайлар маңызды",
+    checks: [
+      "Асырауды алушының кім екені және талаптың қандай құқықтық негізге сүйенетіні.",
+      "Қолданыстағы келісімнің, сот актісінің немесе атқарушылық іс жүргізудің бар-жоғы.",
+      "Бұрын жасалған төлемдер және оларды құжатпен растау мүмкіндігі.",
+      "Табыстар, шығыстар және алушының қажеттіліктері туралы маңызды мәліметтер.",
+    ],
+    caution: "Алименттің мөлшері, тәсілі мен өндіріп алу тәртібі алушының санатына, құқықтық негізге және нақты мән-жайларға байланысты. Сауалнама алимент сомасын есептемейді.",
+  },
+  child: {
+    heading: "Баланың мүдделерін бағалау үшін нені дайындау керек",
+    checks: [
+      "Баланың нақты қайда тұратыны және күнделікті күтімі мен тәрбиесін кім қамтамасыз ететіні.",
+      "Ата-аналар ұсынған нұсқалар және олардың іс жүзінде орындалу мүмкіндігі.",
+      "Баланың тұрмыс, оқу, денсаулық жағдайы мен үйреншікті ортасына қатысты ескерілуге тиіс жағдайлар.",
+      "Ата-аналардың қатынастарын реттейтін келісімдер, сот шешімдері және өзге құжаттар.",
+    ],
+    caution: "Балаға қатысты мәселелерде оның құқықтары мен мүдделері басым мәнге ие. Уәкілетті органның немесе соттың қандай шешім қабылдайтынына алдын ала кепілдік беруге болмайды.",
+  },
+};
+
+
   ...documentDefinitions.map((doc) => ({
     id: doc.id,
     title: doc.title,
@@ -134,8 +225,9 @@ export default function App() {
     (doc.title + " " + doc.description).toLowerCase().includes(search.toLowerCase())
   ), [category, search]);
 
-  const questions = scenarioQuestions[selectedTopic];
-  const topicName = topics.find((topic) => topic.id === selectedTopic)?.title ?? "Правовой вопрос";
+  const visibleTopics = isKk ? topicsKk : topics;
+  const questions = (isKk ? scenarioQuestionsKk : scenarioQuestions)[selectedTopic];
+  const topicName = visibleTopics.find((topic) => topic.id === selectedTopic)?.title ?? (isKk ? "Құқықтық мәселе" : "Правовой вопрос");
   const selectedDocument = documentDefinitions.find((doc) => doc.id === selectedDocumentId) ?? null;
 
   function goTo(id: string) {
@@ -208,13 +300,13 @@ export default function App() {
         <section className="quick-strip"><div><strong>01</strong><span>Понятная информация</span></div><div><strong>02</strong><span>Сценарии действий</span></div><div><strong>03</strong><span>Документы и инструкции</span></div><div><strong>04</strong><span>Правовая грамотность</span></div></section>
 
         <section className="section" id="directions"><div className="section-heading"><div><p className="eyebrow">01 / НАПРАВЛЕНИЯ</p><h2>{isKk ? "Отбасы құқығының негізгі салалары" : "Основные направления семейного права"}</h2></div><p className="section-intro">Выберите интересующую тему — платформа поможет сориентироваться в правовых вопросах и дальнейших шагах.</p></div>
-          <div className="topic-grid">{topics.map((topic, index) => <button className="topic-card" key={topic.id} onClick={() => chooseTopic(topic.id)}><span className="topic-number">0{index + 1}</span><span className="topic-icon">{topic.icon}</span><h3>{isKk ? ["Некеге тұру","Некені бұзу","Мүлікті бөлу","Алимент","Баланың құқықтары"][index] : topic.title}</h3><p>{isKk ? ["Тіркеу шарттары, құжаттар және неке шарты.","Некені бұзу тәртібі және дайындық.","Ортақ мүлік және оны бөлу мәселелері.","Отбасы мүшелерін асырау мәселелері.","Баланың мүдделерін қорғау және ата-аналар құқықтары."][index] : topic.description}</p><span className="card-arrow">↗</span></button>)}</div>
+          <div className="topic-grid">{visibleTopics.map((topic, index) => <button className="topic-card" key={topic.id} onClick={() => chooseTopic(topic.id)}><span className="topic-number">0{index + 1}</span><span className="topic-icon">{topic.icon}</span><h3>{topic.title}</h3><p>{topic.description}</p><span className="card-arrow">↗</span></button>)}</div>
         </section>
 
         <section className="assistant-section" id="assistant"><div className="assistant-copy"><p className="eyebrow">02 / ИНФОРМАЦИОННЫЙ СЦЕНАРИЙ</p><h2>Ситуация → значимые обстоятельства → вопросы для проверки</h2><p>Ответьте на несколько вопросов. Опросник помогает зафиксировать исходные обстоятельства и определить, какие правовые вопросы следует проверить; он пока не применяет нормы автоматически и не оценивает перспективы дела.</p><div className="assistant-points"><div><span>01</span><p><b>Уточнение ситуации</b><small>Выделяем юридически значимые обстоятельства.</small></p></div><div><span>02</span><p><b>Правовая основа</b><small>Определяем нормы, которые нужно проверить.</small></p></div><div><span>03</span><p><b>Сравнение вариантов</b><small>Рассматриваем последствия, риски и следующие шаги.</small></p></div></div><p className="legal-note">Сценарий носит исключительно информационный характер: это опросник, а не автоматический правовой анализ. Он не проверяет документы, не определяет правовую позицию и не заменяет индивидуальную юридическую консультацию.</p></div>
           <div className="scenario-card"><div className="scenario-card-head"><div><span className="live-dot"></span> ИНТЕРАКТИВНЫЙ СЦЕНАРИЙ</div><span>{scenarioStep < 3 ? `ШАГ ${scenarioStep + 1} / 3` : "РЕЗЮМЕ"}</span></div><div className="progress-track"><span style={{ width: ((scenarioStep + 1) / 3 * 100) + "%" }}></span></div>
-            <label className="field-label" htmlFor="scenario-topic">Выберите правовую тему</label><select id="scenario-topic" value={selectedTopic} onChange={(e) => { setSelectedTopic(e.target.value as Topic); setScenarioStep(0); setAnswers({}); }}>{topics.map((topic) => <option value={topic.id} key={topic.id}>{topic.title}</option>)}</select>
-            {scenarioStep < 3 ? <><p className="question-count">{questions[scenarioStep].title}</p><h3 className="scenario-question">{questions[scenarioStep].question}</h3><div className="answer-list">{questions[scenarioStep].options.map((option) => <button key={option} className={answers[String(scenarioStep)] === option ? "answer-option selected" : "answer-option"} onClick={() => answerQuestion(option)}><span>{option}</span><i>{answers[String(scenarioStep)] === option ? "✓" : "＋"}</i></button>)}</div><div className="scenario-controls"><button className="btn btn-outline" disabled={scenarioStep === 0} onClick={() => setScenarioStep((step) => Math.max(0, step - 1))}>Назад</button><button className="btn btn-primary" disabled={!answers[String(scenarioStep)]} onClick={() => setScenarioStep((step) => step + 1)}>Продолжить <span>→</span></button></div></> : <div className="scenario-summary"><div className="summary-icon">✓</div><p className="eyebrow">ПРЕДВАРИТЕЛЬНОЕ РЕЗЮМЕ</p><h3>{topicName}</h3><p>Вы указали следующие обстоятельства:</p><ul>{questions.map((question, index) => <li key={question.title}><b>{question.question}</b><span>{answers[String(index)]}</span></li>)}</ul><section className="scenario-guidance" aria-labelledby="scenario-guidance-title"><p className="eyebrow">СЛЕДУЮЩИЙ ЭТАП</p><h4 id="scenario-guidance-title">{scenarioGuidance[selectedTopic].heading}</h4><ul>{scenarioGuidance[selectedTopic].checks.map((item) => <li key={item}>{item}</li>)}</ul><p className="guidance-caution">{scenarioGuidance[selectedTopic].caution}</p></section><div className="summary-warning"><b>Границы результата.</b> Это предварительная карта вопросов и документов, а не правовое заключение. Здесь не определяются применимые статьи, не рассчитываются суммы и не прогнозируется решение суда. Для этого нужно проверить факты, документы и актуальные редакции нормативных актов РК.</div><div className="scenario-summary-actions"><button className="btn btn-outline" onClick={() => setScenarioStep(2)}>Изменить ответы</button><button className="btn btn-primary" onClick={resetScenario}>Пройти заново</button></div></div>}
+            <label className="field-label" htmlFor="scenario-topic">Выберите правовую тему</label><select id="scenario-topic" value={selectedTopic} onChange={(e) => { setSelectedTopic(e.target.value as Topic); setScenarioStep(0); setAnswers({}); }}>{visibleTopics.map((topic) => <option value={topic.id} key={topic.id}>{topic.title}</option>)}</select>
+            {scenarioStep < 3 ? <><p className="question-count">{questions[scenarioStep].title}</p><h3 className="scenario-question">{questions[scenarioStep].question}</h3><div className="answer-list">{questions[scenarioStep].options.map((option) => <button key={option} className={answers[String(scenarioStep)] === option ? "answer-option selected" : "answer-option"} onClick={() => answerQuestion(option)}><span>{option}</span><i>{answers[String(scenarioStep)] === option ? "✓" : "＋"}</i></button>)}</div><div className="scenario-controls"><button className="btn btn-outline" disabled={scenarioStep === 0} onClick={() => setScenarioStep((step) => Math.max(0, step - 1))}>Назад</button><button className="btn btn-primary" disabled={!answers[String(scenarioStep)]} onClick={() => setScenarioStep((step) => step + 1)}>Продолжить <span>→</span></button></div></> : <div className="scenario-summary"><div className="summary-icon">✓</div><p className="eyebrow">ПРЕДВАРИТЕЛЬНОЕ РЕЗЮМЕ</p><h3>{topicName}</h3><p>Вы указали следующие обстоятельства:</p><ul>{questions.map((question, index) => <li key={question.title}><b>{question.question}</b><span>{answers[String(index)]}</span></li>)}</ul><section className="scenario-guidance" aria-labelledby="scenario-guidance-title"><p className="eyebrow">СЛЕДУЮЩИЙ ЭТАП</p><h4 id="scenario-guidance-title">{(isKk ? scenarioGuidanceKk : scenarioGuidance)[selectedTopic].heading}</h4><ul>{(isKk ? scenarioGuidanceKk : scenarioGuidance)[selectedTopic].checks.map((item) => <li key={item}>{item}</li>)}</ul><p className="guidance-caution">{(isKk ? scenarioGuidanceKk : scenarioGuidance)[selectedTopic].caution}</p></section><div className="summary-warning"><b>Границы результата.</b> Это предварительная карта вопросов и документов, а не правовое заключение. Здесь не определяются применимые статьи, не рассчитываются суммы и не прогнозируется решение суда. Для этого нужно проверить факты, документы и актуальные редакции нормативных актов РК.</div><div className="scenario-summary-actions"><button className="btn btn-outline" onClick={() => setScenarioStep(2)}>Изменить ответы</button><button className="btn btn-primary" onClick={resetScenario}>Пройти заново</button></div></div>}
             <div className="scenario-foot">Ваши ответы пока не отправляются на сервер и не сохраняются после закрытия страницы.</div>
           </div>
         </section>
