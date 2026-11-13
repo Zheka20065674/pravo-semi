@@ -434,11 +434,17 @@ export default function App() {
     category: translateCardText(doc.id, "category", doc.category),
     description: translateCardText(doc.id, "description", doc.description),
     status: doc.status === "Правовая карта: черновик" ? "Құқықтық карта: жоба" : doc.status === "Исследование" ? "Зерттеу" : doc.status === "Опубликован" ? "Жарияланған" : doc.status,
-  } : doc).filter((doc) =>
-    (category === "Все" || (isKk ? categoryPairs.find((item) => item.ru === category)?.kk : category) === doc.category) &&
-    ((doc.title + " " + doc.description).toLowerCase().includes(search.toLowerCase()) ||
-      (documents.find((original) => original.id === doc.id)?.title + " " + documents.find((original) => original.id === doc.id)?.description).toLowerCase().includes(search.toLowerCase()))
-  ), [category, search, isKk]);
+  } : doc).filter((doc) => {
+    const original = documents.find((item) => item.id === doc.id);
+    const bilingualSearchText = [
+      doc.title, doc.description,
+      original?.title ?? "", original?.description ?? "",
+      translateCardText(doc.id, "title", original?.title ?? doc.title),
+      translateCardText(doc.id, "description", original?.description ?? doc.description),
+    ].join(" ").toLowerCase();
+    return (category === "Все" || (isKk ? categoryPairs.find((item) => item.ru === category)?.kk : category) === doc.category) &&
+      bilingualSearchText.includes(search.toLowerCase());
+  }), [category, search, isKk]);
 
   const visibleTopics = isKk ? topicsKk : topics;
   const questions = (isKk ? scenarioQuestionsKk : scenarioQuestions)[selectedTopic];
