@@ -381,6 +381,17 @@ function translateCardText(id: string, field: "title" | "category" | "descriptio
   return translations[id]?.[field] ?? fallback;
 }
 
+
+const kkAdmin = {
+  title:"Әкімші панелі", tag:"Әкімші панелінің алдын ала нұсқасы", back:"← Сайтқа оралу",
+  eyebrow:"ПЛАТФОРМАНЫ БАСҚАРУ",
+  lead:"Болашақ панельдің көрнекі нұсқасы. Басқару әзірге демонстрациялық сипатта: рөлдерді, дерекқорды және серверлік тексерулерді қосу қажет.",
+  stats:["Сайт бөлімдері","Каталог материалдары","Құқықтық сценарийлер","Интерфейс тілдері"],
+  modules:"Платформа модульдері", connect:"Қосу қажет функциялар", demo:"Үлгі",
+  items:["Басты бет","Құқықтық бағыттар","Көмекші сценарийлері","Құжаттар кітапханасы","Білім базасы","Жиі қойылатын сұрақтар","Тіл баптаулары","Пайдаланушылар мен рөлдер"],
+  tasks:["Дерекқор және резервтік көшіру","Авторизация және әкімші рөлдері","Әкімшілік әрекеттер журналы","Құқықтық материалдарды тексеру және жариялау","Құжаттармен қорғалған жұмыс"],
+};
+
 export default function App() {
   const [language, setLanguage] = useState<Lang>("ru");
   const [activeNav, setActiveNav] = useState("home");
@@ -462,10 +473,10 @@ export default function App() {
 
   if (showAdmin) {
     return <div className="admin-shell">
-      <header className="admin-top"><a className="brand" href="#" onClick={(e) => { e.preventDefault(); setShowAdmin(false); }}>⚖️ Право Семьи</a><span className="admin-tag">Предварительный макет админ-панели</span><button className="btn btn-outline" onClick={() => setShowAdmin(false)}>← На сайт</button></header>
-      <main className="admin-main"><p className="eyebrow">УПРАВЛЕНИЕ ПЛАТФОРМОЙ</p><h1>Панель администратора</h1><p className="muted">Визуальная основа будущей панели. Управление пока демонстрационное: подключение ролей, базы данных и серверных проверок ещё предстоит.</p>
-        <div className="admin-stats"><div className="admin-stat"><span>Разделы сайта</span><strong>5</strong></div><div className="admin-stat"><span>Материалы каталога</span><strong>8</strong></div><div className="admin-stat"><span>Правовые сценарии</span><strong>5</strong></div><div className="admin-stat"><span>Языки интерфейса</span><strong>2</strong></div></div>
-        <div className="admin-grid"><section className="panel"><h2>Модули платформы</h2>{["Главная страница","Правовые направления","Сценарии помощника","Библиотека документов","База знаний","Частые вопросы","Настройки языка","Пользователи и роли"].map((item) => <div className="admin-row" key={item}><span>{item}</span><span className="status-pill">Макет</span></div>)}</section><section className="panel"><h2>Что необходимо подключить</h2><ul className="check-list"><li>База данных и резервное копирование</li><li>Авторизация и роли администратора</li><li>Журнал административных действий</li><li>Проверка и публикация правовых материалов</li><li>Защищённая работа с документами</li></ul></section></div>
+      <header className="admin-top"><a className="brand" href="#" onClick={(e) => { e.preventDefault(); setShowAdmin(false); }}>⚖️ {isKk ? "Отбасы құқығы" : "Право Семьи"}</a><span className="admin-tag">{isKk ? kkAdmin.tag : "Предварительный макет админ-панели"}</span><button className="btn btn-outline" onClick={() => setShowAdmin(false)}>{isKk ? kkAdmin.back : "← На сайт"}</button></header>
+      <main className="admin-main"><p className="eyebrow">{isKk ? kkAdmin.eyebrow : "УПРАВЛЕНИЕ ПЛАТФОРМОЙ"}</p><h1>{isKk ? kkAdmin.title : "Панель администратора"}</h1><p className="muted">{isKk ? kkAdmin.lead : "Визуальная основа будущей панели. Управление пока демонстрационное: подключение ролей, базы данных и серверных проверок ещё предстоит."}</p>
+        <div className="admin-stats"><div className="admin-stat"><span>{isKk ? kkAdmin.stats[0] : "Разделы сайта"}</span><strong>5</strong></div><div className="admin-stat"><span>{isKk ? kkAdmin.stats[1] : "Материалы каталога"}</span><strong>8</strong></div><div className="admin-stat"><span>{isKk ? kkAdmin.stats[2] : "Правовые сценарии"}</span><strong>5</strong></div><div className="admin-stat"><span>{isKk ? kkAdmin.stats[3] : "Языки интерфейса"}</span><strong>2</strong></div></div>
+        <div className="admin-grid"><section className="panel"><h2>{isKk ? kkAdmin.modules : "Модули платформы"}</h2>{(isKk ? kkAdmin.items : ["Главная страница","Правовые направления","Сценарии помощника","Библиотека документов","База знаний","Частые вопросы","Настройки языка","Пользователи и роли"]).map((item) => <div className="admin-row" key={item}><span>{item}</span><span className="status-pill">{isKk ? kkAdmin.demo : "Макет"}</span></div>)}</section><section className="panel"><h2>{isKk ? kkAdmin.connect : "Что необходимо подключить"}</h2><ul className="check-list">{(isKk ? kkAdmin.tasks : ["База данных и резервное копирование","Авторизация и роли администратора","Журнал административных действий","Проверка и публикация правовых материалов","Защищённая работа с документами"]).map((item) => <li key={item}>{item}</li>)}</ul></section></div>
       </main>
     </div>;
   }
