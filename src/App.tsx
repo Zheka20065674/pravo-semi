@@ -187,7 +187,10 @@ export default function App() {
         <nav className={mobileMenu ? "nav-open" : ""} aria-label="Основная навигация">
           {navLabels.map((label, index) => <button key={label} className={activeNav === ["home","directions","assistant","documents","knowledge"][index] ? "nav-link active" : "nav-link"} onClick={() => goTo(["home","directions","assistant","documents","knowledge"][index])}>{isKk ? ["Басты бет","Бағыттар","Құқықтық көмекші","Құжаттар","Білім базасы"][index] : label}</button>)}
         </nav>
-        <button className="language-button" onClick={() => setLanguage(isKk ? "ru" : "kk")}>{isKk ? "РУС" : "ҚАЗ"}</button>
+        <div className="language-switch" role="group" aria-label="Выбор языка сайта">
+          <button type="button" className={language === "ru" ? "language-button active" : "language-button"} aria-pressed={language === "ru"} lang="ru" onClick={() => setLanguage("ru")}>Русский</button>
+          <button type="button" className={language === "kk" ? "language-button active" : "language-button"} aria-pressed={language === "kk"} lang="kk" onClick={() => setLanguage("kk")}>Қазақша</button>
+        </div>
       </header>
 
       <main>
