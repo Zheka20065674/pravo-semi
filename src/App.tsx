@@ -419,6 +419,14 @@ export default function App() {
       : "Право Семьи — информационная платформа о семейном праве Республики Казахстан: правовые сценарии, документы и понятные инструкции.");
     const locale = document.querySelector('meta[property="og:locale"]');
     locale?.setAttribute("content", language === "kk" ? "kk_KZ" : "ru_KZ");
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    ogTitle?.setAttribute("content", language === "kk"
+      ? "Право Семьи — Қазақстан Республикасының отбасы құқығы"
+      : "Право Семьи — семейное право Республики Казахстан");
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    ogDescription?.setAttribute("content", language === "kk"
+      ? "Отбасы құқығын түсініңіз, құқықтық сценарийлермен танысыңыз және құжаттарға қойылатын талаптарды зерделеңіз."
+      : "Разбирайтесь в семейном праве, изучайте правовые сценарии и требования к документам.");
   }, [language]);
   const filteredDocuments = useMemo(() => documents.map((doc) => isKk ? {
     ...doc,
