@@ -58,6 +58,59 @@ const scenarioQuestions: Record<Topic, { title: string; question: string; option
   ],
 };
 
+const scenarioGuidance: Record<Topic, { heading: string; checks: string[]; caution: string }> = {
+  marriage: {
+    heading: "Что проверить перед регистрацией",
+    checks: [
+      "Возраст, добровольность намерения и отсутствие обстоятельств, препятствующих регистрации брака.",
+      "Перечень документов и порядок обращения в регистрирующий орган.",
+      "Нужен ли брачный договор и какие вопросы стороны хотят урегулировать заранее.",
+      "Есть ли имущественные или иные обстоятельства, которые требуют отдельной правовой оценки.",
+    ],
+    caution: "Опросник не подтверждает наличие или отсутствие законных препятствий к регистрации. Это проверяется по документам и действующим нормам.",
+  },
+  divorce: {
+    heading: "Что важно установить для выбора процедуры",
+    checks: [
+      "Есть ли общие несовершеннолетние дети и какие вопросы, связанные с ними, остаются спорными.",
+      "Совпадают ли позиции супругов относительно расторжения брака.",
+      "Существует ли спор о разделе имущества, содержании членов семьи или иных требованиях.",
+      "Какие документы подтверждают регистрацию брака и существенные обстоятельства ситуации.",
+    ],
+    caution: "Наличие детей, спора или несогласия может влиять на порядок расторжения брака. Конкретный маршрут нужно определять после проверки обстоятельств и действующей редакции закона.",
+  },
+  property: {
+    heading: "Какие сведения собрать по имуществу",
+    checks: [
+      "Когда, кем и на каком основании приобретён каждый объект имущества.",
+      "Правоустанавливающие документы, договоры, платёжные документы и сведения о регистрации права.",
+      "Есть ли основания считать имущество личным, общим или приобретённым на смешанные средства.",
+      "Имеются ли кредиты, залоги, аресты, права третьих лиц или соглашения между супругами.",
+    ],
+    caution: "Сам факт приобретения имущества во время брака не позволяет без проверки всех обстоятельств окончательно определить правовой режим каждого объекта.",
+  },
+  alimony: {
+    heading: "Какие обстоятельства имеют значение",
+    checks: [
+      "Кто является получателем содержания и на каком юридическом основании заявляется требование.",
+      "Есть ли действующее соглашение, судебный акт или исполнительное производство.",
+      "Какие платежи уже производились и подтверждены ли они документально.",
+      "Какие сведения о доходах, расходах и потребностях получателя могут иметь значение.",
+    ],
+    caution: "Размер, способ и порядок взыскания зависят от категории получателя, правового основания и конкретных обстоятельств. Опросник не рассчитывает сумму алиментов.",
+  },
+  child: {
+    heading: "Что подготовить для оценки интересов ребёнка",
+    checks: [
+      "Где ребёнок фактически проживает и кто ежедневно обеспечивает уход и воспитание.",
+      "Какие варианты предлагают родители и насколько они практически осуществимы.",
+      "Какие условия проживания, обучения, здоровья и привычного окружения ребёнка необходимо учитывать.",
+      "Какие соглашения, решения суда и иные документы уже регулируют отношения родителей.",
+    ],
+    caution: "В вопросах о ребёнке первостепенное значение имеют его права и интересы. Нельзя заранее гарантировать, какое решение примет уполномоченный орган или суд.",
+  },
+};
+
 const navLabels = ["Главная", "Направления", "Правовой помощник", "Документы", "База знаний"];
 const categories = ["Все", "Брак", "Развод", "Имущество", "Алименты", "Дети", "Суд"];
 
@@ -156,9 +209,9 @@ export default function App() {
         </section>
 
         <section className="assistant-section" id="assistant"><div className="assistant-copy"><p className="eyebrow">02 / ИНФОРМАЦИОННЫЙ СЦЕНАРИЙ</p><h2>Ситуация → значимые обстоятельства → вопросы для проверки</h2><p>Ответьте на несколько вопросов. Опросник помогает зафиксировать исходные обстоятельства и определить, какие правовые вопросы следует проверить; он пока не применяет нормы автоматически и не оценивает перспективы дела.</p><div className="assistant-points"><div><span>01</span><p><b>Уточнение ситуации</b><small>Выделяем юридически значимые обстоятельства.</small></p></div><div><span>02</span><p><b>Правовая основа</b><small>Определяем нормы, которые нужно проверить.</small></p></div><div><span>03</span><p><b>Сравнение вариантов</b><small>Рассматриваем последствия, риски и следующие шаги.</small></p></div></div><p className="legal-note">Сценарий носит исключительно информационный характер: это опросник, а не автоматический правовой анализ. Он не проверяет документы, не определяет правовую позицию и не заменяет индивидуальную юридическую консультацию.</p></div>
-          <div className="scenario-card"><div className="scenario-card-head"><div><span className="live-dot"></span> ИНТЕРАКТИВНЫЙ СЦЕНАРИЙ</div><span>ШАГ {scenarioStep + 1} / 3</span></div><div className="progress-track"><span style={{ width: ((scenarioStep + 1) / 3 * 100) + "%" }}></span></div>
+          <div className="scenario-card"><div className="scenario-card-head"><div><span className="live-dot"></span> ИНТЕРАКТИВНЫЙ СЦЕНАРИЙ</div><span>{scenarioStep < 3 ? `ШАГ ${scenarioStep + 1} / 3` : "РЕЗЮМЕ"}</span></div><div className="progress-track"><span style={{ width: ((scenarioStep + 1) / 3 * 100) + "%" }}></span></div>
             <label className="field-label" htmlFor="scenario-topic">Выберите правовую тему</label><select id="scenario-topic" value={selectedTopic} onChange={(e) => { setSelectedTopic(e.target.value as Topic); setScenarioStep(0); setAnswers({}); }}>{topics.map((topic) => <option value={topic.id} key={topic.id}>{topic.title}</option>)}</select>
-            {scenarioStep < 3 ? <><p className="question-count">{questions[scenarioStep].title}</p><h3 className="scenario-question">{questions[scenarioStep].question}</h3><div className="answer-list">{questions[scenarioStep].options.map((option) => <button key={option} className={answers[String(scenarioStep)] === option ? "answer-option selected" : "answer-option"} onClick={() => answerQuestion(option)}><span>{option}</span><i>{answers[String(scenarioStep)] === option ? "✓" : "＋"}</i></button>)}</div><div className="scenario-controls"><button className="btn btn-outline" disabled={scenarioStep === 0} onClick={() => setScenarioStep((step) => Math.max(0, step - 1))}>Назад</button><button className="btn btn-primary" disabled={!answers[String(scenarioStep)]} onClick={() => setScenarioStep((step) => step + 1)}>Продолжить <span>→</span></button></div></> : <div className="scenario-summary"><div className="summary-icon">✓</div><p className="eyebrow">ПРЕДВАРИТЕЛЬНОЕ РЕЗЮМЕ</p><h3>{topicName}</h3><p>Вы указали следующие обстоятельства:</p><ul>{questions.map((question, index) => <li key={question.title}><b>{question.question}</b><span>{answers[String(index)]}</span></li>)}</ul><div className="summary-warning">Для правового вывода необходимо проверить актуальные нормы законодательства РК и документы по конкретной ситуации. Автоматическая правовая квалификация пока не подключена.</div><button className="btn btn-primary full-btn" onClick={resetScenario}>Пройти сценарий заново</button></div>}
+            {scenarioStep < 3 ? <><p className="question-count">{questions[scenarioStep].title}</p><h3 className="scenario-question">{questions[scenarioStep].question}</h3><div className="answer-list">{questions[scenarioStep].options.map((option) => <button key={option} className={answers[String(scenarioStep)] === option ? "answer-option selected" : "answer-option"} onClick={() => answerQuestion(option)}><span>{option}</span><i>{answers[String(scenarioStep)] === option ? "✓" : "＋"}</i></button>)}</div><div className="scenario-controls"><button className="btn btn-outline" disabled={scenarioStep === 0} onClick={() => setScenarioStep((step) => Math.max(0, step - 1))}>Назад</button><button className="btn btn-primary" disabled={!answers[String(scenarioStep)]} onClick={() => setScenarioStep((step) => step + 1)}>Продолжить <span>→</span></button></div></> : <div className="scenario-summary"><div className="summary-icon">✓</div><p className="eyebrow">ПРЕДВАРИТЕЛЬНОЕ РЕЗЮМЕ</p><h3>{topicName}</h3><p>Вы указали следующие обстоятельства:</p><ul>{questions.map((question, index) => <li key={question.title}><b>{question.question}</b><span>{answers[String(index)]}</span></li>)}</ul><section className="scenario-guidance" aria-labelledby="scenario-guidance-title"><p className="eyebrow">СЛЕДУЮЩИЙ ЭТАП</p><h4 id="scenario-guidance-title">{scenarioGuidance[selectedTopic].heading}</h4><ul>{scenarioGuidance[selectedTopic].checks.map((item) => <li key={item}>{item}</li>)}</ul><p className="guidance-caution">{scenarioGuidance[selectedTopic].caution}</p></section><div className="summary-warning"><b>Границы результата.</b> Это предварительная карта вопросов и документов, а не правовое заключение. Здесь не определяются применимые статьи, не рассчитываются суммы и не прогнозируется решение суда. Для этого нужно проверить факты, документы и актуальные редакции нормативных актов РК.</div><div className="scenario-summary-actions"><button className="btn btn-outline" onClick={() => setScenarioStep(2)}>Изменить ответы</button><button className="btn btn-primary" onClick={resetScenario}>Пройти заново</button></div></div>}
             <div className="scenario-foot">Ваши ответы пока не отправляются на сервер и не сохраняются после закрытия страницы.</div>
           </div>
         </section>
