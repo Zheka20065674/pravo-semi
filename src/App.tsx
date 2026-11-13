@@ -204,7 +204,6 @@ const scenarioGuidanceKk: Record<Topic, { heading: string; checks: string[]; cau
 
   
 const navLabels = ["Главная", "Направления", "Правовой помощник", "Документы", "База знаний"];
-const categories = ["Все", "Брак", "Развод", "Имущество", "Алименты", "Дети", "Суд"];
 
 const categoryPairs = [
   { ru: "Все", kk: "Барлығы" },
