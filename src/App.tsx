@@ -513,8 +513,8 @@ export default function App() {
       <div className="topline"><span>{isKk ? kkUi.topLine : "Семейное право Республики Казахстан"}</span><span>{isKk ? kkUi.topMeta : "Информация • Сценарии • Документы"}</span></div>
       <header className="site-header">
         <a className="brand" href="#home" onClick={() => setActiveNav("home")}><span className="brand-mark">⚖</span><span>Право <b>Семьи</b><small>{isKk ? kkUi.brandTag : "ПРАВОВАЯ ПЛАТФОРМА РК"}</small></span></a>
-        <button className="mobile-menu-btn" aria-label={isKk ? (mobileMenu ? kkUi.menuClose : kkUi.menuOpen) : (mobileMenu ? "Закрыть меню" : "Открыть меню") } onClick={() => setMobileMenu(!mobileMenu)}>☰</button>
-        <nav className={mobileMenu ? "nav-open" : ""} aria-label={isKk ? kkUi.navLabel : "Основная навигация"}>
+        <button className="mobile-menu-btn" type="button" aria-label={isKk ? (mobileMenu ? kkUi.menuClose : kkUi.menuOpen) : (mobileMenu ? "Закрыть меню" : "Открыть меню")} aria-expanded={mobileMenu} aria-controls="primary-navigation" onClick={() => setMobileMenu(!mobileMenu)}>☰</button>
+        <nav id="primary-navigation" className={mobileMenu ? "nav-open" : ""} aria-label={isKk ? kkUi.navLabel : "Основная навигация"}>
           {navLabels.map((label, index) => <button key={label} className={activeNav === ["home","directions","assistant","documents","knowledge"][index] ? "nav-link active" : "nav-link"} onClick={() => goTo(["home","directions","assistant","documents","knowledge"][index])}>{isKk ? ["Басты бет","Бағыттар","Құқықтық көмекші","Құжаттар","Білім базасы"][index] : label}</button>)}
         </nav>
         <div className="language-switch" role="group" aria-label={isKk ? kkUi.languageGroup : "Выбор языка сайта"}>
