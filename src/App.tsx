@@ -206,6 +206,16 @@ const scenarioGuidanceKk: Record<Topic, { heading: string; checks: string[]; cau
 const navLabels = ["Главная", "Направления", "Правовой помощник", "Документы", "База знаний"];
 const categories = ["Все", "Брак", "Развод", "Имущество", "Алименты", "Дети", "Суд"];
 
+const categoryPairs = [
+  { ru: "Все", kk: "Барлығы" },
+  { ru: "Брак", kk: "Неке" },
+  { ru: "Развод", kk: "Некені бұзу" },
+  { ru: "Имущество", kk: "Мүлік" },
+  { ru: "Алименты", kk: "Алимент" },
+  { ru: "Дети", kk: "Балалар" },
+  { ru: "Суд", kk: "Сот" },
+];
+
 export default function App() {
   const [language, setLanguage] = useState<Lang>("ru");
   const [activeNav, setActiveNav] = useState("home");
@@ -254,7 +264,12 @@ export default function App() {
     setAnswers({});
   }
 
-  const faqs = [
+  const faqs = isKk ? [
+    { q: "Сот шешімінің нәтижесіне кепілдік берілген болжам алуға бола ма?", a: "Жоқ. Сот шешімі істің мән-жайларына, дәлелдемелерге, қолданылатын құқық нормаларына және соттың бағалауына байланысты. Платформа ықтимал нұсқалар мен тәуекелдерді түсіндіре алады, бірақ істің нәтижесіне кепілдік бермейді." },
+    { q: "Құқықтық сценарийді пайдалану үшін тіркелу қажет пе?", a: "Платформаның алғашқы нұсқасында сценарийлермен танысу үшін міндетті тіркелу талап етілмейді. Тарихты сақтау және жеке функциялар қорғалған авторизация енгізілгеннен кейін ғана қолжетімді болады." },
+    { q: "Құқықтық ақпарат қайдан алынады?", a: "Негізгі дереккөздер — Қазақстан Республикасының қолданыстағы нормативтік құқықтық актілері және ресми ақпараттық ресурстар, ең алдымен «Әділет» ақпараттық-құқықтық жүйесі. Әр материал бойынша актінің редакциясы мен өзектілік күні көрсетілуге тиіс." },
+    { q: "Тексеру үшін өз құжатымды жүктей аламын ба?", a: "Бұл мүмкіндік жобада көзделген, бірақ әзірге іске қосылған жоқ. Оны іске қоспас бұрын файлдарды қауіпсіз өңдеу және құпиялылық талаптарын енгізу қажет." },
+  ] : [
     { q: "Можно ли получить гарантированный прогноз решения суда?", a: "Нет. Судебный результат зависит от обстоятельств дела, доказательств, применимых норм и оценки суда. Платформа сможет объяснять возможные варианты и риски, но не обещать исход." },
     { q: "Нужно ли регистрироваться, чтобы изучить правовой сценарий?", a: "В первой версии базовое знакомство со сценариями задумано без обязательной регистрации. Сохранение истории и персональные функции появятся только после внедрения защищённой авторизации." },
     { q: "Откуда берётся правовая информация?", a: "Основным ориентиром будут действующие нормативные правовые акты Республики Казахстан и официальные источники, прежде всего ИПС «Әділет». Для каждого материала важны редакция и дата актуальности." },
@@ -313,7 +328,7 @@ export default function App() {
         </section>
 
         <section className="section documents-section" id="documents"><div className="section-heading"><div><p className="eyebrow">03 / БИБЛИОТЕКА</p><h2>Документы и правовые карты</h2></div><p className="section-intro">Структурированная библиотека документов для подготовки к юридически значимым действиям.</p></div>
-          <div className="document-tools"><div className="search-box"><span>⌕</span><input aria-label="Поиск документов" placeholder="Найти документ или тему..." value={search} onChange={(e) => setSearch(e.target.value)} /></div><div className="category-filters">{categories.map((item) => <button key={item} className={category === item ? "filter-chip selected" : "filter-chip"} onClick={() => setCategory(item)}>{item}</button>)}</div></div>
+          <div className="document-tools"><div className="search-box"><span>⌕</span><input aria-label="Поиск документов" placeholder="Найти документ или тему..." value={search} onChange={(e) => setSearch(e.target.value)} /></div><div className="category-filters">{categoryPairs.map((item) => <button key={item.ru} className={category === item.ru ? "filter-chip selected" : "filter-chip"} onClick={() => setCategory(item.ru)}>{isKk ? item.kk : item.ru}</button>)}</div></div>
           <div className="document-grid">{filteredDocuments.map((doc) => <article className="document-card" key={doc.title}><div className="document-card-top"><span className="file-icon">▤</span><span className="status-pill">{doc.status}</span></div><small>{doc.category.toUpperCase()}</small><h3>{doc.title}</h3><p>{doc.description}</p><button onClick={() => { if (documentDefinitions.some((item) => item.id === doc.id)) { setSelectedDocumentId(doc.id); setNotice(""); } else { setNotice("Для документа «" + doc.title + "» ещё формируется отдельная правовая карта требований."); } }}>Открыть требования <span>→</span></button></article>)}</div>
           {selectedDocument && <section className="doc-detail" aria-live="polite">
             <div className="doc-detail-head"><div><p className="eyebrow">ПРАВОВАЯ КАРТА / ЧЕРНОВИК</p><h3>{selectedDocument.title}</h3><p>{selectedDocument.purpose}</p></div><button className="btn btn-outline" onClick={() => setSelectedDocumentId(null)}>Закрыть</button></div>
