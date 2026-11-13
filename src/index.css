@@ -124,3 +124,17 @@ h3 { color:#263f53; }
  .admin-top { flex-wrap:wrap; padding:15px 5%; }.admin-tag { order:3; width:100%; }.admin-main { padding:40px 6%; }.admin-main h1 { font-size:34px; }.admin-stats { grid-template-columns:1fr 1fr; }.admin-grid { grid-template-columns:1fr; }
 }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition:none!important; } }
+
+
+/* Scenario result: practical triage without pretending to provide an automated legal opinion. */
+.scenario-guidance { margin:18px 0 14px; padding:16px; border:1px solid #e2edf4; border-radius:9px; background:#f8fbfd; }
+.scenario-guidance h4 { margin:5px 0 12px; color:#294d68; font-size:13px; line-height:1.45; }
+.scenario-guidance ul { margin:0; padding-left:18px; color:#526c7d; }
+.scenario-guidance li { margin:8px 0; padding-left:2px; font-size:10px; line-height:1.6; }
+.guidance-caution { margin:13px 0 0; padding-top:11px; border-top:1px solid #e3edf3; color:#7a694b; font-size:10px; line-height:1.6; }
+.scenario-summary-actions { display:flex; gap:9px; }
+.scenario-summary-actions .btn { flex:1; min-height:40px; padding:8px 10px; font-size:10px; }
+@media (max-width:560px) {
+  .scenario-guidance { padding:13px; }
+  .scenario-summary-actions { flex-direction:column; }
+}
