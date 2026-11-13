@@ -133,11 +133,11 @@ const scenarioQuestionsKk: Record<Topic, { title: string; question: string; opti
   ],
   property: [
     { title: "Даудың нысанасы", question: "Мәселе қандай мүлікке қатысты?", options: ["Жылжымайтын мүлік", "Автомобиль", "Ақша / салымдар", "Мүліктің бірнеше түрі", "Басқа"] },
-    { title: "Мүлікті алу негізі", question: "Мүлік қашан және қандай негізде алынған?", options: ["Неке кезінде сатып алынған", "Некеге дейін сатып алынған", "Сыйға берілген немесе мұрагерлік тәртіппен алынған", "Әртүрлі негіздер бар", "Білмеймін"] },
+    { title: "Мүліктің алыну негізі", question: "Мүлік қашан және қандай құқықтық негізде алынған?", options: ["Неке кезінде сатып алынған", "Некеге дейін сатып алынған", "Сыйға тарту шарты бойынша немесе мұрагерлік тәртіппен алынған", "Әртүрлі құқықтық негіздер бар", "Білмеймін"] },
     { title: "Тараптардың ұстанымы", question: "Мүлікті бөлуге қатысты келісім бар ма?", options: ["Иә", "Жоқ", "Ішінара келісім бар"] },
   ],
   alimony: [
-    { title: "Алимент алушы", question: "Алимент төлеу кімнің пайдасына талап етіледі?", options: ["Кәмелетке толмаған баланың пайдасына", "Кәмелетке толған баланың пайдасына", "Жұбайының / бұрынғы жұбайының пайдасына", "Отбасының басқа мүшесінің пайдасына"] },
+    { title: "Алимент алушы", question: "Алимент кімнің пайдасына төленуге тиіс?", options: ["Кәмелетке толмаған баланың пайдасына", "Кәмелетке толған баланың пайдасына", "Жұбайының немесе бұрынғы жұбайының пайдасына", "Отбасының басқа мүшесінің пайдасына"] },
     { title: "Қазіргі жағдай", question: "Қолданыстағы келісім немесе сот актісі бар ма?", options: ["Иә", "Жоқ", "Білмеймін"] },
     { title: "Мақсат", question: "Нені анықтау қажет?", options: ["Келісім жасау", "Алимент өндіріп алу тәртібін анықтау", "Қолданыстағы тәртіпті өзгерту", "Берешек мәселесін анықтау"] },
   ],
@@ -378,7 +378,7 @@ function translateCardText(id: string, field: "title" | "category" | "descriptio
     "property-division-agreement": { title: "Ерлі-зайыптылардың ортақ мүлкін бөлу туралы келісім", category: "Мүлік", description: "Ерлі-зайыптылардың ортақ мүлкін өзара келісім бойынша ерікті түрде бөлу." },
     "alimony-agreement": { title: "Алимент төлеу туралы келісім", category: "Алимент", description: "Алимент төлеуге міндетті тұлға мен алушы арасындағы алимент мөлшерін, талаптарын және төлеу тәртібін белгілеу." },
     "child-residence-claim": { title: "Баланың тұрғылықты жерін айқындау туралы талап қою", category: "Балалар", description: "Баланың құқықтары, қорғаншылық органының қатысуы және дәлелдемелер туралы нормаларды бөлек зерттеу қажет." },
-    "child-contact-agreement": { title: "Баламен араласу тәртібі туралы келісім", category: "Балалар", description: "Келісім нысанын, баланың мүдделерін және қорғаншылық органының немесе медиатордың ықтимал қатысуын бөлек зерттеу қажет." },
+    "child-contact-agreement": { title: "Баламен қарым-қатынас жасау тәртібі туралы келісім", category: "Балалар", description: "Келісім нысанын, баланың мүдделерін және қорғаншылық органының немесе медиатордың ықтимал қатысуын бөлек зерттеу қажет." },
     "court-response": { title: "Талап қоюға пікір (қарсылық)", category: "Сот", description: "Процестік мерзімдер, мазмұн, қосымшалар және құжаттарды қатысушыларға жіберу қағидалары бойынша жеке карта қажет." },
     "appeal": { title: "Апелляциялық шағым", category: "Сот", description: "Апелляциялық іс жүргізудің арнайы нормалары, мерзімі және жол берілетін негіздері бойынша жеке карта қажет." },
   };
@@ -459,13 +459,26 @@ export default function App() {
     setAnswers((current) => ({ ...current, [String(scenarioStep)]: value }));
   }
 
+  function changeLanguage(nextLanguage: Lang) {
+    if (nextLanguage === language) return;
+    const currentQuestions = (language === "kk" ? scenarioQuestionsKk : scenarioQuestions)[selectedTopic];
+    const nextQuestions = (nextLanguage === "kk" ? scenarioQuestionsKk : scenarioQuestions)[selectedTopic];
+    setAnswers((current) => Object.fromEntries(Object.entries(current).map(([key, value]) => {
+      const questionIndex = Number(key);
+      const optionIndex = currentQuestions[questionIndex]?.options.indexOf(value) ?? -1;
+      return [key, optionIndex >= 0 ? nextQuestions[questionIndex]?.options[optionIndex] ?? value : value];
+    })));
+    setNotice("");
+    setLanguage(nextLanguage);
+  }
+
   function resetScenario() {
     setScenarioStep(0);
     setAnswers({});
   }
 
   const faqs = isKk ? [
-    { q: "Сот шешімінің нәтижесіне кепілдік берілген болжам алуға бола ма?", a: "Жоқ. Сот шешімі істің мән-жайларына, дәлелдемелерге, қолданылатын құқық нормаларына және соттың бағалауына байланысты. Платформа ықтимал нұсқалар мен тәуекелдерді түсіндіре алады, бірақ істің нәтижесіне кепілдік бермейді." },
+    { q: "Сот шешімін алдын ала нақты болжауға бола ма?", a: "Жоқ. Сот шешімі істің мән-жайларына, дәлелдемелерге, қолданылатын құқық нормаларына және соттың бағалауына байланысты. Платформа ықтимал нұсқалар мен тәуекелдерді түсіндіре алады, бірақ істің нәтижесіне кепілдік бермейді." },
     { q: "Құқықтық сценарийді пайдалану үшін тіркелу қажет пе?", a: "Платформаның алғашқы нұсқасында сценарийлермен танысу үшін міндетті тіркелу талап етілмейді. Тарихты сақтау және жеке функциялар қорғалған авторизация енгізілгеннен кейін ғана қолжетімді болады." },
     { q: "Құқықтық ақпарат қайдан алынады?", a: "Негізгі дереккөздер — Қазақстан Республикасының қолданыстағы нормативтік құқықтық актілері және ресми ақпараттық ресурстар, ең алдымен «Әділет» ақпараттық-құқықтық жүйесі. Әр материал бойынша актінің редакциясы мен өзектілік күні көрсетілуге тиіс." },
     { q: "Тексеру үшін өз құжатымды жүктей аламын ба?", a: "Бұл мүмкіндік жобада көзделген, бірақ әзірге іске қосылған жоқ. Оны іске қоспас бұрын файлдарды қауіпсіз өңдеу және құпиялылық талаптарын енгізу қажет." },
@@ -496,8 +509,8 @@ export default function App() {
           {navLabels.map((label, index) => <button key={label} className={activeNav === ["home","directions","assistant","documents","knowledge"][index] ? "nav-link active" : "nav-link"} onClick={() => goTo(["home","directions","assistant","documents","knowledge"][index])}>{isKk ? ["Басты бет","Бағыттар","Құқықтық көмекші","Құжаттар","Білім базасы"][index] : label}</button>)}
         </nav>
         <div className="language-switch" role="group" aria-label={isKk ? kkUi.languageGroup : "Выбор языка сайта"}>
-          <button type="button" className={language === "ru" ? "language-button active" : "language-button"} aria-pressed={language === "ru"} lang="ru" onClick={() => setLanguage("ru")}>Русский</button>
-          <button type="button" className={language === "kk" ? "language-button active" : "language-button"} aria-pressed={language === "kk"} lang="kk" onClick={() => setLanguage("kk")}>Қазақша</button>
+          <button type="button" className={language === "ru" ? "language-button active" : "language-button"} aria-pressed={language === "ru"} lang="ru" onClick={() => changeLanguage("ru")}>Русский</button>
+          <button type="button" className={language === "kk" ? "language-button active" : "language-button"} aria-pressed={language === "kk"} lang="kk" onClick={() => changeLanguage("kk")}>Қазақша</button>
         </div>
       </header>
 
@@ -508,7 +521,7 @@ export default function App() {
             <h1>{isKk ? "Отбасы құқығы — түсінікті тілмен" : <>Право семьи — <em>понятным</em> языком</>}</h1>
             <p className="hero-lead">{isKk ? "Отбасылық құқықтық мәселелерді түсініңіз, ықтимал әрекеттерді салыстырыңыз және маңызды шешімдерге дайындалыңыз." : "Разбирайтесь в семейных правоотношениях, сравнивайте возможные действия и готовьтесь к юридически значимым решениям."}</p>
             <div className="hero-actions"><button className="btn btn-primary" onClick={() => goTo("assistant")}>{isKk ? "Жағдайды талдау" : "Разобрать ситуацию"} <span>↗</span></button><button className="btn btn-text" onClick={() => goTo("directions")}>{isKk ? "Бағыттарды қарау" : "Изучить направления"} <span>→</span></button></div>
-            <div className="hero-trust"><span>{isKk ? kkUi.trust1 : "✓ Источники указаны в правовых картах"}</span><span>{isKk ? kkUi.trust2 : "✓ Нейтральное объяснение"}</span><span>✓ Русский / Қазақша</span></div>
+            <div className="hero-trust"><span>{isKk ? kkUi.trust1 : "✓ Источники указаны в правовых картах"}</span><span>{isKk ? kkUi.trust2 : "✓ Нейтральное объяснение"}</span><span>{isKk ? "✓ Орысша / Қазақша" : "✓ Русский / Қазақша"}</span></div>
           </div>
           <div className="hero-visual"><div className="visual-orbit orbit-one"></div><div className="visual-orbit orbit-two"></div><div className="visual-card"><div className="visual-symbol">§</div><div className="visual-line long"></div><div className="visual-line"></div><div className="visual-line short"></div><div className="visual-bottom"><span>{isKk ? "ОТБАСЫ ҚҰҚЫҒЫ" : "FAMILY LAW"}</span><span>№ 01</span></div></div><div className="floating-note"><span>✦</span><div><b>{isKk ? "Құқықтық айқындық" : "Правовая ясность"}</b><small>{isKk ? "Түсінуден басталады" : "Начинается с понимания"}</small></div></div><div className="visual-caption">{isKk ? "ЗАҢ • ҚҰҚЫҚ • ОТБАСЫ" : "ЗАКОН • ПРАВА • СЕМЬЯ"}</div></div>
         </section>
