@@ -9,7 +9,7 @@ if (dictionaryStart < 0 || dictionaryEnd < 0) {
   throw new Error("Could not locate the Kazakh legal-text dictionary in src/App.tsx.");
 }
 const dictionary = app.slice(dictionaryStart, dictionaryEnd);
-const decode = (value) => JSON.parse(\`"\${value}"\`);
+const decode = (value) => JSON.parse('"' + value + '"');
 const translatedKeys = new Set(
   [...dictionary.matchAll(/"((?:\\.|[^"\\])*)"\s*:/g)].map((match) => decode(match[1])),
 );
@@ -36,8 +36,8 @@ if (queueStart >= 0) {
 const missing = [...requiredStrings].filter((value) => !translatedKeys.has(value));
 if (missing.length) {
   console.error("Missing Kazakh translations for document content:");
-  for (const value of missing) console.error(\` - \${value}\`);
+  for (const value of missing) console.error(" - " + value);
   process.exitCode = 1;
 } else {
-  console.log(\`Kazakh localization audit passed: \${requiredStrings.size} document strings have translations.\`);
+  console.log("Kazakh localization audit passed: " + requiredStrings.size + " document strings have translations.");
 }
