@@ -70,7 +70,7 @@ pravo-semi/
 
 ## Автоматическая проверка
 
-GitHub Actions запускает TypeScript-проверку и production-сборку при push в `main`, pull request и вручную (`.github/workflows/build.yml`).
+Перед production-сборкой выполняется `npm run check:localization`: скрипт проверяет, что пользовательские названия, описания, требования и ограничения из реестра документов имеют казахские переводы; отсутствие перевода останавливает сборку. GitHub Actions запускает эту проверку, TypeScript-проверку и production-сборку при push в `main`, pull request и вручную (`.github/workflows/build.yml`).
 
 ## Следующие этапы
 
