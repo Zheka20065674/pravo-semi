@@ -499,7 +499,7 @@ export default function App() {
 
         <section className="quick-strip"><div><strong>01</strong><span>{isKk ? kkUi.quick[0] : "Понятная информация"}</span></div><div><strong>02</strong><span>{isKk ? kkUi.quick[1] : "Сценарии действий"}</span></div><div><strong>03</strong><span>{isKk ? kkUi.quick[2] : "Документы и инструкции"}</span></div><div><strong>04</strong><span>{isKk ? kkUi.quick[3] : "Правовая грамотность"}</span></div></section>
 
-        <section className="section" id="directions"><div className="section-heading"><div><p className="eyebrow">01 / НАПРАВЛЕНИЯ</p><h2>{isKk ? "Отбасы құқығының негізгі салалары"  : kkUi.directions : "Основные направления семейного права"}</h2></div><p className="section-intro">{isKk ? kkUi.directionIntro : "Выберите интересующую тему — платформа поможет сориентироваться в правовых вопросах и дальнейших шагах."}</p></div>
+        <section className="section" id="directions"><div className="section-heading"><div><p className="eyebrow">01 / НАПРАВЛЕНИЯ</p><h2>{isKk ? kkUi.directions : "Основные направления семейного права"}</h2></div><p className="section-intro">{isKk ? kkUi.directionIntro : "Выберите интересующую тему — платформа поможет сориентироваться в правовых вопросах и дальнейших шагах."}</p></div>
           <div className="topic-grid">{visibleTopics.map((topic, index) => <button className="topic-card" key={topic.id} onClick={() => chooseTopic(topic.id)}><span className="topic-number">0{index + 1}</span><span className="topic-icon">{topic.icon}</span><h3>{topic.title}</h3><p>{topic.description}</p><span className="card-arrow">↗</span></button>)}</div>
         </section>
 
