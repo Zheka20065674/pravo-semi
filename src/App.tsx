@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { documentDefinitions, documentResearchQueue } from "./data/documentRequirements";
+import { documentTemplates } from "./data/documentTemplates";
+import DocumentTemplatePanel from "./components/DocumentTemplatePanel";
 
 type Lang = "ru" | "kk";
 type Topic = "divorce" | "property" | "alimony" | "child" | "marriage";
@@ -20,7 +22,7 @@ const documents = [
     title: doc.title,
     category: doc.category,
     description: doc.purpose,
-    status: doc.status === "published" ? "Опубликован" : "Правовая карта: черновик",
+    status: documentTemplates.some((template) => template.id === doc.id) ? "Образец доступен" : doc.status === "published" ? "Опубликован" : "Правовая карта: черновик",
   })),
   ...documentResearchQueue.map((doc) => ({
     id: doc.id,
@@ -433,7 +435,7 @@ export default function App() {
     title: translateCardText(doc.id, "title", doc.title),
     category: translateCardText(doc.id, "category", doc.category),
     description: translateCardText(doc.id, "description", doc.description),
-    status: doc.status === "Правовая карта: черновик" ? "Құқықтық карта: жоба" : doc.status === "Исследование" ? "Зерттеу" : doc.status === "Опубликован" ? "Жарияланған" : doc.status,
+    status: doc.status === "Образец доступен" ? "Үлгі қолжетімді" : doc.status === "Правовая карта: черновик" ? "Құқықтық карта: жоба" : doc.status === "Исследование" ? "Зерттеу" : doc.status === "Опубликован" ? "Жарияланған" : doc.status,
   } : doc).filter((doc) => {
     const original = documents.find((item) => item.id === doc.id);
     const bilingualSearchText = [
@@ -450,6 +452,7 @@ export default function App() {
   const questions = (isKk ? scenarioQuestionsKk : scenarioQuestions)[selectedTopic];
   const topicName = visibleTopics.find((topic) => topic.id === selectedTopic)?.title ?? (isKk ? "Құқықтық мәселе" : "Правовой вопрос");
   const selectedDocumentRaw = documentDefinitions.find((doc) => doc.id === selectedDocumentId) ?? null;
+  const selectedTemplate = documentTemplates.find((template) => template.id === selectedDocumentId) ?? null;
   const translateLegal = (value: string) => isKk ? (kkLegalText[value] ?? value) : value;
   const selectedDocument = selectedDocumentRaw && isKk ? {
     ...selectedDocumentRaw,
@@ -565,20 +568,9 @@ export default function App() {
 
         <section className="section documents-section" id="documents"><div className="section-heading"><div><p className="eyebrow">{isKk ? "03 / КІТАПХАНА" : "03 / БИБЛИОТЕКА"}</p><h2>{isKk ? kkUi.library : "Документы и правовые карты"}</h2></div><p className="section-intro">{isKk ? kkUi.libraryIntro : "Структурированная библиотека документов для подготовки к юридически значимым действиям."}</p></div>
           <div className="document-tools"><div className="search-box"><span>⌕</span><input aria-label={isKk ? kkUi.search : "Поиск документов"} placeholder={isKk ? kkUi.searchPlaceholder : "Найти документ или тему..."} value={search} onChange={(e) => setSearch(e.target.value)} /></div><div className="category-filters">{categoryPairs.map((item) => <button key={item.ru} className={category === item.ru ? "filter-chip selected" : "filter-chip"} onClick={() => setCategory(item.ru)}>{isKk ? item.kk : item.ru}</button>)}</div></div>
-          <div className="document-grid">{filteredDocuments.map((doc) => <article className="document-card" key={doc.title}><div className="document-card-top"><span className="file-icon">▤</span><span className="status-pill">{doc.status}</span></div><small>{doc.category.toUpperCase()}</small><h3>{doc.title}</h3><p>{doc.description}</p><button onClick={() => { if (documentDefinitions.some((item) => item.id === doc.id)) { setSelectedDocumentId(doc.id); setNotice(""); } else { setNotice(isKk ? "Бұл құжатқа қойылатын талаптардың жеке құқықтық картасы әлі әзірленіп жатыр." : "Для документа «" + doc.title + "» ещё формируется отдельная правовая карта требований."); } }}>{isKk ? kkUi.open : "Открыть требования"} <span>→</span></button></article>)}</div>
-          {selectedDocument && <section className="doc-detail" aria-live="polite">
-            <div className="doc-detail-head"><div><p className="eyebrow">{isKk ? kkUi.docDraft : "ПРАВОВАЯ КАРТА / ЧЕРНОВИК"}</p><h3>{selectedDocument.title}</h3><p>{selectedDocument.purpose}</p></div><button className="btn btn-outline" onClick={() => setSelectedDocumentId(null)}>{isKk ? kkUi.close : "Закрыть"}</button></div>
-            <div className="doc-detail-meta"><span className="status-pill">{isKk ? kkUi.notTemplate : "Не является готовым шаблоном"}</span><span>{isKk ? kkUi.sourceCheck : "Нормативные источники приведены для самостоятельной проверки"}</span></div>
-            <div className="doc-detail-grid">
-              <div><h4>{isKk ? kkUi.docHeadings[0] : "Правовые источники"}</h4><ul>{selectedDocument.legalSources.map((source) => <li key={source.article + source.title}><b>{source.act}, {isKk ? (source.article.includes("–") ? source.article + "-баптар" : source.article === "37 пункт 2" ? "37-баптың 2-тармағы" : source.article + "-бап") : "ст. " + source.article}</b><span>{source.title}</span><a href={source.url} target="_blank" rel="noreferrer">{isKk ? kkUi.adiletLink : "Открыть в ИПС «Әділет»"} ↗</a></li>)}</ul></div>
-              <div><h4>{isKk ? kkUi.docHeadings[1] : "Содержание документа"}</h4><ul>{selectedDocument.contentRequirements.map((item) => <li key={item.id}><b>{item.label}</b><span>{item.explanation}</span><small>{item.kind === "mandatory" ? (isKk ? kkUi.kinds[0] : "Обязательно") : item.kind === "conditional" ? (isKk ? kkUi.kinds[1] : "При определённых условиях") : (isKk ? kkUi.kinds[2] : "Рекомендация")}</small></li>)}</ul></div>
-              <div><h4>{isKk ? kkUi.docHeadings[2] : "Форма и удостоверение"}</h4><ul>{selectedDocument.formRequirements.map((item) => <li key={item.id}><b>{item.label}</b><span>{item.explanation}</span></li>)}</ul></div>
-              <div><h4>{isKk ? kkUi.docHeadings[3] : "Приложения и подтверждения"}</h4><ul>{selectedDocument.attachmentRequirements.map((item) => <li key={item.id}><b>{item.label}</b><span>{item.explanation}</span></li>)}</ul></div>
-              <div><h4>{isKk ? kkUi.docHeadings[4] : "Процессуальные условия"}</h4><ul>{selectedDocument.processNotes.map((item) => <li key={item.id}><b>{item.label}</b><span>{item.explanation}</span></li>)}</ul></div>
-              <div><h4>{isKk ? kkUi.docHeadings[5] : "Ограничения и риски"}</h4><ul>{selectedDocument.limitations.map((item) => <li key={item}><span>{item}</span></li>)}</ul></div>
-            </div>
-            <p className="doc-detail-warning">{isKk ? kkUi.docWarning : "Эта карта — внутренняя проектная основа и ещё не прошла полную юридическую экспертизу. Система пока не формирует документ и не подтверждает его соответствие всем требованиям конкретного дела."}</p>
-          </section>}
+          <div className="document-grid">{filteredDocuments.map((doc) => <article className="document-card" key={doc.title}><div className="document-card-top"><span className="file-icon">▤</span><span className="status-pill">{doc.status}</span></div><small>{doc.category.toUpperCase()}</small><h3>{doc.title}</h3><p>{doc.description}</p><button onClick={() => { if (documentDefinitions.some((item) => item.id === doc.id)) { setSelectedDocumentId(doc.id); setNotice(""); } else { setNotice(isKk ? "Бұл құжатқа қойылатын талаптардың жеке құқықтық картасы әлі әзірленіп жатыр." : "Для документа «" + doc.title + "» ещё формируется отдельная правовая карта требований."); } }}>{isKk ? (documentTemplates.some((item) => item.id === doc.id) ? "Үлгіні ашу" : kkUi.open) : (documentTemplates.some((item) => item.id === doc.id) ? "Открыть образец" : "Открыть требования")} <span>→</span></button></article>)}</div>
+          {selectedDocument && selectedTemplate && <DocumentTemplatePanel template={selectedTemplate} isKk={isKk} onClose={() => setSelectedDocumentId(null)} />}
+          {selectedDocument && !selectedTemplate && <div className="inline-notice" role="status">{isKk ? "Бұл құжаттың үлгісі әзірге дайын емес." : "Образец этого документа ещё не подготовлен."}</div>}
           {filteredDocuments.length === 0 && <div className="empty-state">{isKk ? kkUi.empty : "По вашему запросу документы не найдены. Попробуйте изменить поиск или категорию."}</div>}
           {notice && <div className="inline-notice" role="status">{notice}<button onClick={() => setNotice("")} aria-label={isKk ? kkUi.noticeClose : "Закрыть"}>×</button></div>}
         </section>
