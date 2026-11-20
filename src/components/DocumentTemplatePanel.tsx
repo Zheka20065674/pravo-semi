@@ -74,7 +74,7 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
     const clauses = copy.clauses.map((clause) => `<section><h2>${escapeHtml(clause.heading)}</h2><p>${escapeHtml(clause.text).replace(/\n/g, "<br>")}</p></section>`).join("");
     printWindow.document.write(`<!doctype html><html lang="${isKk ? "kk" : "ru"}"><head><meta charset="utf-8"><title>${escapeHtml(copy.title)}</title><style>
       @page{size:A4;margin:20mm}body{font:12pt/1.5 "Times New Roman",serif;color:#111}h1{text-align:center;font-size:16pt;margin:0 0 8mm}h2{font-size:12pt;margin:7mm 0 2mm}p{white-space:normal;margin:0;text-align:justify}.subtitle{white-space:pre-line;margin-bottom:8mm}.closing{margin-top:9mm;font-style:italic;font-size:10pt}.draft{margin-bottom:8mm;padding:3mm;border:1px solid #999;font-size:9pt}
-      </style></head><body><div class="draft">${escapeHtml(template.warning)}</div><h1>${escapeHtml(copy.title)}</h1><p class="subtitle">${escapeHtml(copy.subtitle)}</p>${clauses}<p class="closing">${escapeHtml(copy.closing)}</p><script>window.onload=()=>window.print()<\/script></body></html>`);
+      </style></head><body><div class="draft">${escapeHtml(isKk ? template.warningKk : template.warning)}</div><h1>${escapeHtml(copy.title)}</h1><p class="subtitle">${escapeHtml(copy.subtitle)}</p>${clauses}<p class="closing">${escapeHtml(copy.closing)}</p><script>window.onload=()=>window.print()<\/script></body></html>`);
     printWindow.document.close();
   };
   const heading = isKk ? "Үлгі құжат" : "Образец документа";
@@ -88,7 +88,7 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
       <div><p className="eyebrow">{heading}</p><h3>{template.title}</h3><p>{isKk ? template.kk.subtitle : template.ru.subtitle}</p></div>
       <button type="button" className="btn btn-outline" onClick={onClose}>{isKk ? "Жабу" : "Закрыть"}</button>
     </div>
-    <div className="doc-template-warning">{template.warning}</div>
+    <div className="doc-template-warning">{isKk ? template.warningKk : template.warning}</div>
     <div className="doc-template-actions">
       <button type="button" className="btn btn-primary" onClick={downloadImage}>{downloadImageLabel}</button>
       <button type="button" className="btn btn-outline" onClick={printDocument}>{downloadPdfLabel}</button>
