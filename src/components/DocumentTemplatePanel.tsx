@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { DocumentTemplate } from "../data/documentTemplates";
 
 type Props = { template: DocumentTemplate; isKk: boolean; onClose: () => void };
@@ -66,7 +65,7 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
     }, "image/png");
   };
   const printDocument = () => {
-    const printWindow = window.open("", "_blank", "noopener,noreferrer");
+    const printWindow = window.open("", "_blank");
     if (!printWindow) {
       window.alert(isKk ? "Басып шығару терезесін ашуға рұқсат беріңіз." : "Разрешите открытие окна для печати документа.");
       return;
