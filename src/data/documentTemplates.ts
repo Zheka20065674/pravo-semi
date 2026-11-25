@@ -256,7 +256,7 @@ export const documentTemplates: DocumentTemplate[] = [
       { label: "Кодекс РК «О браке (супружестве) и семье», статьи 68, 70, 73", url: "https://adilet.zan.kz/rus/docs/K1100000518" },
       { label: "Нормативное постановление Верховного Суда РК от 29.11.2018 № 15", url: "https://adilet.zan.kz/rus/docs/P180000015S" }
     ]
-  }
+  },
 
 
   {
