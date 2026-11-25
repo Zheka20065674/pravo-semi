@@ -89,6 +89,20 @@ function translateCardText(id: string, field: "title" | "category" | "descriptio
 }
 
 
+const navLabels = ["Главная", "Правовой помощник", "Документы", "О проекте"];
+const kkLegalText: Record<string, string> = {};
+const categoryTranslation: Record<string, string> = {
+  "Брак": "Неке", "Развод": "Некені бұзу", "Имущество": "Мүлік",
+  "Дети": "Балалар", "Суд": "Сот", "Алименты": "Алимент",
+};
+const categoryPairs = [
+  { ru: "Все", kk: "Барлығы" },
+  ...Array.from(new Set(documents.map((doc) => doc.category))).map((ru) => ({
+    ru,
+    kk: categoryTranslation[ru] ?? ru,
+  })),
+];
+
 const kkAdmin = {
   title:"Әкімші панелі", tag:"Әкімші панелінің көрсетілімдік нұсқасы", back:"← Сайтқа оралу",
   eyebrow:"ПЛАТФОРМАНЫ БАСҚАРУ",
@@ -102,9 +116,6 @@ const kkAdmin = {
 export default function App() {
   const [language, setLanguage] = useState<Lang>("ru");
   const [activeNav, setActiveNav] = useState("home");
-  const [selectedTopic, setSelectedTopic] = useState<Topic>("divorce");
-  const [, setScenarioStep] = useState(0);
-  const [answers, setAnswers] = useState<AnswerMap>({});
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Все");
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
@@ -173,22 +184,12 @@ export default function App() {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   }
 
-  function chooseTopic(id: Topic) {
-    setSelectedTopic(id);
-    setScenarioStep(0);
-    setAnswers({});
+  function chooseTopic(_id: Topic) {
     goTo("assistant");
   }
 
   function changeLanguage(nextLanguage: Lang) {
     if (nextLanguage === language) return;
-    const currentQuestions = (language === "kk" ? scenarioQuestionsKk : scenarioQuestions)[selectedTopic];
-    const nextQuestions = (nextLanguage === "kk" ? scenarioQuestionsKk : scenarioQuestions)[selectedTopic];
-    setAnswers((current) => Object.fromEntries(Object.entries(current).map(([key, value]) => {
-      const questionIndex = Number(key);
-      const optionIndex = currentQuestions[questionIndex]?.options.indexOf(value) ?? -1;
-      return [key, optionIndex >= 0 ? nextQuestions[questionIndex]?.options[optionIndex] ?? value : value];
-    })));
     setNotice("");
     setLanguage(nextLanguage);
   }
