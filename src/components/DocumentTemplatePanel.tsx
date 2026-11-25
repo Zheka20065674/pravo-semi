@@ -143,7 +143,8 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
     printWindow.document.write(`<!doctype html><html lang="${isKk ? "kk" : "ru"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>
       @page{size:A4;margin:10mm 10mm 10mm 20mm}
       *{box-sizing:border-box}
-      body{font-family:"Times New Roman",serif;font-size:14pt;line-height:1;color:#111;margin:0}\n      body.example,body.example h1,body.example h2,body.example p{font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive;color:#174d91;line-height:1.5}
+      body{font-family:"Times New Roman",serif;font-size:14pt;line-height:1;color:#111;margin:0}
+      body.example,body.example h1,body.example h2,body.example p{font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive;color:#174d91;line-height:1.5}
       h1{font-size:14pt;font-weight:bold;text-align:center;margin:0 0 8mm}
       .subtitle{white-space:pre-wrap;margin:0 0 7mm;text-align:left}
       section{break-inside:avoid;margin:0 0 5mm}
