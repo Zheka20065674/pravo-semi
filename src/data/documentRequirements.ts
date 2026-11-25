@@ -335,4 +335,4 @@ export const documentDefinitions: DocumentDefinition[] = [
 
 ];
 
-export const documentResearchQueue = [] as const;
+export const documentResearchQueue: { id: string; title: string; status: string }[] = [];
