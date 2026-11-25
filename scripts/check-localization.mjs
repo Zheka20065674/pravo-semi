@@ -3,17 +3,16 @@ import { readFileSync } from "node:fs";
 const app = readFileSync("src/App.tsx", "utf8");
 const data = readFileSync("src/data/documentRequirements.ts", "utf8");
 
-// The site now keeps Kazakh interface copy in kkUi and topic/card translations
-// in topicsKk / translateCardText. The old kkLegalText dictionary was removed
-// during the interface redesign, so do not require that obsolete symbol.
-const requiredLocalizationStructures = [
-  ["Kazakh UI dictionary", /const\\s+kkUi\\s*=\\s*\\{/],
-  ["Kazakh topic translations", /const\\s+topicsKk\\s*:/],
-  ["Document-card translation function", /function\\s+translateCardText\\s*\\(/],
+// Validate the current localization structures by their literal source markers.
+// This avoids fragile regular-expression escaping in the build environment.
+const requiredMarkers = [
+  ["Kazakh UI dictionary", "const kkUi = {"],
+  ["Kazakh topic translations", "const topicsKk:"],
+  ["Document-card translation function", "function translateCardText("],
 ];
 
-const missingStructures = requiredLocalizationStructures
-  .filter(([, pattern]) => !pattern.test(app))
+const missingStructures = requiredMarkers
+  .filter(([, marker]) => !app.includes(marker))
   .map(([label]) => label);
 
 if (missingStructures.length) {
@@ -21,7 +20,7 @@ if (missingStructures.length) {
   for (const label of missingStructures) console.error(" - " + label);
   process.exitCode = 1;
 } else {
-  const documentCount = (data.match(/\\bid:\\s*"/g) || []).length;
+  const documentCount = data.split('id: "').length - 1;
   console.log("Localization structure audit passed: Kazakh UI, topic translations and document-card translation function found.");
   console.log("Document registry records inspected: " + documentCount);
 }
