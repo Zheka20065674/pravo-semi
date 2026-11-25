@@ -243,7 +243,7 @@ export const documentDefinitions: DocumentDefinition[] = [
       "Шаблон не заменяет судебное решение и не гарантирует принудительное исполнение как исполнительный документ.",
     ],
     lastLegalReview: null,
-  }
+  },
 
   {
     id: "court-response",
