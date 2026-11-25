@@ -15,8 +15,9 @@ type RequestBody = { messages?: { role: "user" | "assistant"; content: string }[
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return res.status(503).json({ error: "ИИ-ассистент пока не подключён: администратору необходимо добавить OPENAI_API_KEY в переменные окружения Vercel." });
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!geminiKey && !openaiKey) return res.status(503).json({ error: "ИИ-ассистент не подключён. Добавьте GEMINI_API_KEY (бесплатный уровень Gemini API) или OPENAI_API_KEY в переменные окружения Vercel." });
 
   const body = (req.body || {}) as RequestBody;
   const messages = Array.isArray(body.messages) ? body.messages.slice(-12) : [];
@@ -41,17 +42,24 @@ export default async function handler(req: any, res: any) {
 Ограничение базы: у тебя нет гарантированного доступа к актуальной редакции всех НПА, судебной практике и материалам дела в реальном времени. Не утверждай, что «вся законодательная база загружена» или что источники проверены онлайн, если это не так.`;
 
   try {
+    if (geminiKey) {
+      const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+      const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL || "gemini-2.5-flash"}:generateContent?key=${encodeURIComponent(geminiKey)}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { temperature: 0.2, maxOutputTokens: 3500 } }),
+      });
+      const result = await upstream.json();
+      if (!upstream.ok) { console.error("Gemini API error:", result?.error?.message || upstream.status); return res.status(502).json({ error: "Gemini API не ответил. Проверьте ключ и бесплатные лимиты Google AI Studio." }); }
+      const answer = result.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("").trim();
+      if (!answer) return res.status(502).json({ error: "ИИ вернул пустой ответ. Попробуйте сформулировать вопрос иначе." });
+      return res.status(200).json({ answer });
+    }
     const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4.1",
-        temperature: 0.2,
-        messages: [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.content }))],
-      }),
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
+      body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-4.1", temperature: 0.2, messages: [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.content }))] }),
     });
     const result = await upstream.json();
-    if (!upstream.ok) return res.status(502).json({ error: "Не удалось получить ответ ИИ. Проверьте настройки API и повторите попытку." });
+    if (!upstream.ok) { console.error("OpenAI API error:", result?.error?.message || upstream.status); return res.status(502).json({ error: "Не удалось получить ответ ИИ. Проверьте настройки API и баланс." }); }
     const answer = result.choices?.[0]?.message?.content;
     if (typeof answer !== "string" || !answer.trim()) return res.status(502).json({ error: "ИИ вернул пустой ответ. Попробуйте сформулировать вопрос иначе." });
     return res.status(200).json({ answer });
