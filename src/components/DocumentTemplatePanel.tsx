@@ -7,14 +7,14 @@ type PreviewMode = "annotated" | "blank" | "example";
 function blankField(label: string): string {
   const value = label.toLowerCase();
   if (/адрес|мекенжай|документ|реквизит|кадастр|свидетельств|паспорт|удостовер/.test(value)) {
-    return "____________________________________________________________\\n____________________________________________________________";
+    return "____________________________________________________________\n____________________________________________________________";
   }
   if (/иин|жсн/.test(value)) return "________________";
   if (/дата|күні|число|срок|мерзім/.test(value)) return "________________________";
   if (/фио|т\\.а\\.ә|фамил|имя|аты-жөн|полностью/.test(value)) return "____________________________________________";
   if (/сумм|размер|доля|үлес|тенге|процент/.test(value)) return "____________________________";
   if (/указать|описать|услов|шарт|режим|основан|сипат|перечень|тізбе|причин/.test(value)) {
-    return "____________________________________________________________\\n____________________________________________________________";
+    return "____________________________________________________________\n____________________________________________________________";
   }
   return "____________________________________________";
 }
@@ -174,7 +174,8 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
     <div className="doc-template-warning">{isKk ? template.warningKk : template.warning}</div>
     <div className="doc-template-mode" role="group" aria-label={isKk ? "Құжат нұсқасын таңдау" : "Выбор варианта документа"}>
       <button type="button" className={mode === "annotated" ? "active" : ""} aria-pressed={mode === "annotated"} onClick={() => setMode("annotated")}>{annotatedLabel}</button>
-      <button type="button" className={mode === "blank" ? "active" : ""} aria-pressed={mode === "blank"} onClick={() => setMode("blank")}>{blankLabel}</button>\n      <button type="button" className={`doc-template-example-button ${mode === "example" ? "active" : ""}`} aria-pressed={mode === "example"} onClick={() => setMode("example")}>{exampleLabel}</button>
+      <button type="button" className={mode === "blank" ? "active" : ""} aria-pressed={mode === "blank"} onClick={() => setMode("blank")}>{blankLabel}</button>
+      <button type="button" className={`doc-template-example-button ${mode === "example" ? "active" : ""}`} aria-pressed={mode === "example"} onClick={() => setMode("example")}>{exampleLabel}</button>
     </div>
     <div className="doc-template-actions">
       <button type="button" className="btn btn-primary" onClick={downloadImage}>{downloadImageLabel}</button>
