@@ -174,3 +174,11 @@ h3 { color:#263f53; }
   .document-paper { padding:22px 17px; }
   .document-paper>h2 { font-size:18px; }
 }
+
+
+/* Filled example: a separate green action and blue-ink handwriting appearance. */
+.doc-template-mode .doc-template-example-button { border-color:#b9dfc7; color:#247447; background:#edf8f0; }
+.doc-template-mode .doc-template-example-button.active { border-color:#25834b; color:#fff; background:#25834b; }
+.document-paper-example { color:#174d91; font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive; }
+.document-paper-example>h2,.document-paper-example .document-paper-subtitle,.document-paper-example section h3,.document-paper-example section p { color:#174d91; font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive; }
+.document-paper-example section p { line-height:1.75; }
