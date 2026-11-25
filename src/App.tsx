@@ -579,8 +579,6 @@ export default function App() {
   }), [category, search, isKk]);
 
   const visibleTopics = isKk ? topicsKk : topics;
-  const questions = (isKk ? scenarioQuestionsKk : scenarioQuestions)[selectedTopic];
-  const topicName = visibleTopics.find((topic) => topic.id === selectedTopic)?.title ?? (isKk ? "Құқықтық мәселе" : "Правовой вопрос");
   const selectedDocumentRaw = documentDefinitions.find((doc) => doc.id === selectedDocumentId) ?? null;
   const selectedTemplate = documentTemplates.find((template) => template.id === selectedDocumentId) ?? null;
   const translateLegal = (value: string) => isKk ? (kkLegalText[value] ?? value) : value;
@@ -611,10 +609,6 @@ export default function App() {
     goTo("assistant");
   }
 
-  function answerQuestion(value: string) {
-    setAnswers((current) => ({ ...current, [String(scenarioStep)]: value }));
-  }
-
   function changeLanguage(nextLanguage: Lang) {
     if (nextLanguage === language) return;
     const currentQuestions = (language === "kk" ? scenarioQuestionsKk : scenarioQuestions)[selectedTopic];
@@ -626,11 +620,6 @@ export default function App() {
     })));
     setNotice("");
     setLanguage(nextLanguage);
-  }
-
-  function resetScenario() {
-    setScenarioStep(0);
-    setAnswers({});
   }
 
   const faqs = isKk ? [
