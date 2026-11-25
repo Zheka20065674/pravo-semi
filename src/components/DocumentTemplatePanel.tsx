@@ -20,7 +20,7 @@ function blankField(label: string): string {
 }
 
 function makeBlank(text: string): string {
-  return text.replace(/\\[([^\\]]+)\\]/g, (_match, label: string) => blankField(label));
+  return text.replace(/\[([^\]]+)\]/g, (_match, label: string) => blankField(label));
 }
 
 function exampleField(label: string, isKk: boolean): string {
@@ -45,7 +45,7 @@ function exampleField(label: string, isKk: boolean): string {
 }
 
 function makeExample(text: string, isKk: boolean): string {
-  return text.replace(/\\[([^\\]]+)\\]/g, (_match, label: string) => exampleField(label, isKk));
+  return text.replace(/\[([^\]]+)\]/g, (_match, label: string) => exampleField(label, isKk));
 }
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -98,11 +98,11 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
       ctx.font = font;
       for (const line of wrapText(ctx, text, textWidth)) drawLines.push({ text: line, font, height, gap });
     };
-    add(copy.title, "bold 34px 'Times New Roman'", 48, 18);
-    add(copy.subtitle, "28px 'Times New Roman'", 38, 30);
+    add(copy.title, isExample ? "bold 34px 'Segoe Print', 'Bradley Hand', cursive" : "bold 34px 'Times New Roman'", 48, 18);
+    add(copy.subtitle, isExample ? "28px 'Segoe Print', 'Bradley Hand', cursive" : "28px 'Times New Roman'", 38, 30);
     for (const clause of copy.clauses) {
-      add(clause.heading, "bold 28px 'Times New Roman'", 40, 10);
-      add(clause.text, "28px 'Times New Roman'", 39, 22);
+      add(clause.heading, isExample ? "bold 28px 'Segoe Print', 'Bradley Hand', cursive" : "bold 28px 'Times New Roman'", 40, 10);
+      add(clause.text, isExample ? "28px 'Segoe Print', 'Bradley Hand', cursive" : "28px 'Times New Roman'", 39, 22);
     }
     const height = Math.max(1754, margin * 2 + drawLines.reduce((sum, line) => sum + line.height + line.gap, 0));
     canvas.width = width;
@@ -114,7 +114,7 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
     let y = margin;
     for (const line of drawLines) {
       paint.font = line.font;
-      paint.fillStyle = "#111111";
+      paint.fillStyle = isExample ? "#174d91" : "#111111";
       paint.fillText(line.text, margin, y);
       y += line.height + line.gap;
     }
@@ -142,7 +142,7 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
     printWindow.document.write(`<!doctype html><html lang="${isKk ? "kk" : "ru"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>
       @page{size:A4;margin:10mm 10mm 10mm 20mm}
       *{box-sizing:border-box}
-      body{font-family:"Times New Roman",serif;font-size:14pt;line-height:1;color:#111;margin:0}
+      body{font-family:"Times New Roman",serif;font-size:14pt;line-height:1;color:#111;margin:0}\n      body.example,body.example h1,body.example h2,body.example p{font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive;color:#174d91;line-height:1.5}
       h1{font-size:14pt;font-weight:bold;text-align:center;margin:0 0 8mm}
       .subtitle{white-space:pre-wrap;margin:0 0 7mm;text-align:left}
       section{break-inside:avoid;margin:0 0 5mm}
@@ -151,7 +151,7 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
       .blank p{line-height:1.35}
       .page-number{position:fixed;bottom:-5mm;right:0;font-size:10pt}
       @media screen{body{max-width:210mm;margin:15px auto;padding:20mm 10mm 10mm 20mm;background:white;box-shadow:0 2px 18px #0002}}
-    </style></head><body class="${isBlank ? "blank" : "annotated"}"><h1>${title}</h1><p class="subtitle">${subtitle}</p>${clauses}<script>window.onload=()=>window.print()<\\/script></body></html>`);
+    </style></head><body class="${isBlank ? "blank" : isExample ? "example" : "annotated"}"><h1>${title}</h1><p class="subtitle">${subtitle}</p>${clauses}<script>window.onload=()=>window.print()<\\/script></body></html>`);
     printWindow.document.close();
   };
 
