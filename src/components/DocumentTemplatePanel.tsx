@@ -189,6 +189,7 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
       <p className="document-paper-subtitle">{copy.subtitle}</p>
       {copy.clauses.map((clause, index) => <section key={index}><h3>{clause.heading}</h3><p>{clause.text}</p></section>)}
     </article>
+    {copy.closing && <p className="doc-template-hint doc-template-closing-note">{copy.closing}</p>}
     <p className="doc-template-hint doc-template-filling-note">{fillingNote}</p>
     <div className="doc-template-sources">
       <b>{isKk ? "Ресми құқықтық дереккөздер" : "Официальные правовые источники"}</b>
