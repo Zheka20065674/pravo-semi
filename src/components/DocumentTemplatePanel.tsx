@@ -25,7 +25,6 @@ function makeBlank(text: string): string {
 
 function exampleField(label: string, isKk: boolean): string {
   const value = label.toLowerCase();
-  const ru = (text: string) => isKk ? text : text;
   if (/апелляцион|апелляциялық/.test(value)) return isKk ? "Астана қалалық сотының азаматтық істер жөніндегі сот алқасына" : "В судебную коллегию по гражданским делам суда города Астаны";
   if (/наименование суда|соттың атауы/.test(value)) return isKk ? "Астана қаласының ауданаралық азаматтық сотына" : "В районный суд города Астаны";
   if (/истц|талап қоюшы|жүгінуші/.test(value)) return "Петров Пётр Петрович";
