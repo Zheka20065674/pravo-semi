@@ -206,7 +206,7 @@ const scenarioGuidanceKk: Record<Topic, { heading: string; checks: string[]; cau
 
 
   
-const navLabels = ["Главная", "Направления", "Правовой помощник", "Документы", "База знаний"];
+const navLabels = ["Главная", "Правовой помощник", "Документы", "О проекте"];
 
 const categoryPairs = [
   { ru: "Все", kk: "Барлығы" },
@@ -662,7 +662,7 @@ export default function App() {
         <a className="brand" href="#home" onClick={() => setActiveNav("home")}><span className="brand-mark">⚖</span><span>Право <b>Семьи</b><small>{isKk ? kkUi.brandTag : "ПРАВОВАЯ ПЛАТФОРМА РК"}</small></span></a>
         <button className="mobile-menu-btn" type="button" aria-label={isKk ? (mobileMenu ? kkUi.menuClose : kkUi.menuOpen) : (mobileMenu ? "Закрыть меню" : "Открыть меню")} aria-expanded={mobileMenu} aria-controls="primary-navigation" onClick={() => setMobileMenu(!mobileMenu)}>☰</button>
         <nav id="primary-navigation" className={mobileMenu ? "nav-open" : ""} aria-label={isKk ? kkUi.navLabel : "Основная навигация"}>
-          {navLabels.map((label, index) => <button key={label} className={activeNav === ["home","directions","assistant","documents","knowledge"][index] ? "nav-link active" : "nav-link"} onClick={() => goTo(["home","directions","assistant","documents","knowledge"][index])}>{isKk ? ["Басты бет","Бағыттар","Құқықтық көмекші","Құжаттар","Білім базасы"][index] : label}</button>)}
+          {navLabels.map((label, index) => <button key={label} className={activeNav === ["home","assistant","documents","about"][index] ? "nav-link active" : "nav-link"} onClick={() => goTo(["home","assistant","documents","about"][index])}>{isKk ? ["Басты бет","Құқықтық көмекші","Құжаттар","Жоба туралы"][index] : label}</button>)}
         </nav>
         <div className="language-switch" role="group" aria-label={isKk ? kkUi.languageGroup : "Выбор языка сайта"}>
           <button type="button" className={language === "ru" ? "language-button active" : "language-button"} aria-pressed={language === "ru"} lang="ru" onClick={() => changeLanguage("ru")}>Русский</button>
