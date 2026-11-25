@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { DocumentTemplate } from "../data/documentTemplates";
 
 type Props = { template: DocumentTemplate; isKk: boolean; onClose: () => void };
-type PreviewMode = "annotated" | "blank";
+type PreviewMode = "annotated" | "blank" | "example";
 
 function blankField(label: string): string {
   const value = label.toLowerCase();
@@ -20,7 +20,32 @@ function blankField(label: string): string {
 }
 
 function makeBlank(text: string): string {
-  return text.replace(/\[([^\]]+)\]/g, (_match, label: string) => blankField(label));
+  return text.replace(/\\[([^\\]]+)\\]/g, (_match, label: string) => blankField(label));
+}
+
+function exampleField(label: string, isKk: boolean): string {
+  const value = label.toLowerCase();
+  if (/наименование суда|соттың атауы/.test(value)) return isKk ? "Астана қаласының ауданаралық азаматтық сотына" : "В районный суд города Астаны";
+  if (/фио.*истц|истц.*фио|талап қоюшы|жүгінуші/.test(value)) return isKk ? "Иванов Иван Иванович" : "Иванов Иван Иванович";
+  if (/фио.*ответч|ответч.*фио|жауапкер/.test(value)) return isKk ? "Петров Пётр Петрович" : "Петров Пётр Петрович";
+  if (/фио|т\\.а\\.ә|фамил|имя|аты-жөн|полностью/.test(value)) return isKk ? "Иванов Иван Иванович" : "Иванов Иван Иванович";
+  if (/иин|жсн/.test(value)) return "000000000000";
+  if (/дата|күні|число/.test(value)) return "15.03.2026";
+  if (/адрес|мекенжай/.test(value)) return isKk ? "Астана қ., мысал көшесі, 10-үй, 5-пәтер" : "г. Астана, ул. Примерная, д. 10, кв. 5";
+  if (/сумм|тенге/.test(value)) return "50 000 (пятьдесят тысяч)";
+  if (/номер/.test(value)) return "123";
+  if (/населённый пункт|елді мекен/.test(value)) return "Астана";
+  if (/орган/.test(value)) return isKk ? "Астана қаласының АХАТ бөлімі" : "Отдел РАГС города Астаны";
+  if (/документ|реквизит|свидетельств|паспорт|удостовер/.test(value)) return isKk ? "Жеке куәлік № 000000000" : "удостоверение личности № 000000000";
+  if (/причин|обстоятельств|описать|указать|услов|шарт|режим|основан|перечень|тізбе|сипат/.test(value)) return isKk ? "Мысал ретінде көрсетілген мән-жайлар құжаттың нақты деректеріне сәйкес ауыстырылуы тиіс." : "В учебном примере указаны условные обстоятельства; замените их фактическими данными и приложите подтверждения.";
+  if (/доля|үлес|процент/.test(value)) return "1/2";
+  if (/марка|модель/.test(value)) return "Toyota Camry";
+  if (/vin/.test(value)) return "XW000000000000000";
+  return isKk ? "Оқу үлгісіндегі шартты дерек" : "Условные данные учебного примера";
+}
+
+function makeExample(text: string, isKk: boolean): string {
+  return text.replace(/\\[([^\\]]+)\\]/g, (_match, label: string) => exampleField(label, isKk));
 }
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -43,12 +68,23 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
 export default function DocumentTemplatePanel({ template, isKk, onClose }: Props) {
   const [mode, setMode] = useState<PreviewMode>("annotated");
   const original = isKk ? template.kk : template.ru;
-  const copy = useMemo(() => mode === "blank" ? {
-    ...original,
-    subtitle: makeBlank(original.subtitle),
-    clauses: original.clauses.map((clause) => ({ ...clause, text: makeBlank(clause.text) })),
-  } : original, [mode, original]);
+  const copy = useMemo(() => {
+    if (mode === "blank") return {
+      ...original,
+      title: makeBlank(original.title),
+      subtitle: makeBlank(original.subtitle),
+      clauses: original.clauses.map((clause) => ({ ...clause, text: makeBlank(clause.text) })),
+    };
+    if (mode === "example") return {
+      ...original,
+      title: makeExample(original.title, isKk),
+      subtitle: makeExample(original.subtitle, isKk),
+      clauses: original.clauses.map((clause) => ({ ...clause, heading: makeExample(clause.heading, isKk), text: makeExample(clause.text, isKk) })),
+    };
+    return original;
+  }, [mode, original, isKk]);
   const isBlank = mode === "blank";
+  const isExample = mode === "example";
 
   const downloadImage = () => {
     const canvas = document.createElement("canvas");
@@ -87,7 +123,7 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = template.id + (isBlank ? "-blank-form" : "-annotated-sample") + ".png";
+      anchor.download = template.id + (isBlank ? "-blank-form" : isExample ? "-filled-example" : "-annotated-sample") + ".png";
       anchor.click();
       URL.revokeObjectURL(url);
     }, "image/png");
@@ -121,12 +157,13 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
 
   const heading = isKk ? "Құжат үлгісі" : "Образец документа";
   const annotatedLabel = isKk ? "РӘСІМДЕУ ҮЛГІСІ" : "ОБРАЗЕЦ ОФОРМЛЕНИЯ";
+  const exampleLabel = isKk ? "ТОЛТЫРЫЛҒАН МЫСАЛ" : "ПРИМЕР ОФОРМЛЕНИЯ";
   const blankLabel = isKk ? "ТОЛТЫРУҒА АРНАЛҒАН ҮЛГІ" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ";
   const downloadImageLabel = isKk ? "PNG суретін жүктеу" : "Скачать изображение (PNG)";
   const downloadPdfLabel = isKk ? "PDF ретінде сақтау" : "Сохранить в PDF";
   const note = isKk
-    ? "Алғашқы нұсқада толтыруға арналған түсіндірмелер көрсетіледі. Екінші нұсқада деректерді қолмен енгізуге арналған бос жолдар беріледі. PDF алу үшін басып шығару терезесінде «PDF ретінде сақтау» тармағын таңдаңыз."
-    : "В первом варианте показаны подсказки, что именно вписывать. Во втором — пустые линии с местом для заполнения от руки. Для PDF в окне печати выберите «Сохранить как PDF».";
+    ? "Бірінші нұсқада толтыруға арналған түсіндірмелер, екіншісінде бос жолдар, үшіншісінде шартты деректермен толтырылған оқу мысалы көрсетіледі. PDF алу үшін басып шығару терезесінде «PDF ретінде сақтау» тармағын таңдаңыз."
+    : "Первый вариант содержит подсказки, второй — чистый бланк, третий — учебный пример с условными данными. Для PDF в окне печати выберите «Сохранить как PDF».";
   const fillingNote = isKk ? "Ескерту: шаршы жақшадағы нұсқаулар құжаттың мәтініне кірмейді." : "Подсказки в квадратных скобках предназначены только для ознакомления и не являются условиями договора.";
 
   return <section className="doc-template-panel" aria-live="polite">
@@ -137,14 +174,14 @@ export default function DocumentTemplatePanel({ template, isKk, onClose }: Props
     <div className="doc-template-warning">{isKk ? template.warningKk : template.warning}</div>
     <div className="doc-template-mode" role="group" aria-label={isKk ? "Құжат нұсқасын таңдау" : "Выбор варианта документа"}>
       <button type="button" className={mode === "annotated" ? "active" : ""} aria-pressed={mode === "annotated"} onClick={() => setMode("annotated")}>{annotatedLabel}</button>
-      <button type="button" className={mode === "blank" ? "active" : ""} aria-pressed={mode === "blank"} onClick={() => setMode("blank")}>{blankLabel}</button>
+      <button type="button" className={mode === "blank" ? "active" : ""} aria-pressed={mode === "blank"} onClick={() => setMode("blank")}>{blankLabel}</button>\n      <button type="button" className={`doc-template-example-button ${mode === "example" ? "active" : ""}`} aria-pressed={mode === "example"} onClick={() => setMode("example")}>{exampleLabel}</button>
     </div>
     <div className="doc-template-actions">
       <button type="button" className="btn btn-primary" onClick={downloadImage}>{downloadImageLabel}</button>
       <button type="button" className="btn btn-outline" onClick={printDocument}>{downloadPdfLabel}</button>
     </div>
     <p className="doc-template-hint">{note}</p>
-    <article className={`document-paper ${isBlank ? "document-paper-blank" : ""}`}>
+    <article className={`document-paper ${isBlank ? "document-paper-blank" : ""} ${isExample ? "document-paper-example" : ""}`}>
       <h2>{copy.title}</h2>
       <p className="document-paper-subtitle">{copy.subtitle}</p>
       {copy.clauses.map((clause, index) => <section key={index}><h3>{clause.heading}</h3><p>{clause.text}</p></section>)}
