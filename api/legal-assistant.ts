@@ -22,8 +22,7 @@ export default async function handler(req: any, res: any) {
   try {
   stage = "configuration";
   const geminiKey = process.env.GEMINI_API_KEY;
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!geminiKey && !openaiKey) return res.status(503).json({ error: "ИИ-ассистент не подключён. Добавьте GEMINI_API_KEY (бесплатный уровень Gemini API) или OPENAI_API_KEY в переменные окружения Vercel." });
+  if (!geminiKey) return res.status(503).json({ error: "Gemini API не подключён. Добавьте GEMINI_API_KEY в переменные окружения Vercel." });
 
   stage = "request-validation";
   const body = (req.body || {}) as RequestBody;
@@ -116,29 +115,56 @@ export default async function handler(req: any, res: any) {
   try {
     if (geminiKey) {
       const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-      const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL || "gemini-2.5-flash"}:generateContent?key=${encodeURIComponent(geminiKey)}`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { temperature: 0.2, maxOutputTokens: 4500 } }),
-      });
-      const upstreamText = await upstream.text();
-      let result: any;
-      try { result = upstreamText ? JSON.parse(upstreamText) : {}; } catch { throw new Error("Gemini вернул ответ в неожиданном формате"); }
-      if (!upstream.ok) { console.error("Gemini API error:", result?.error?.message || upstream.status); return res.status(502).json({ error: "Gemini API не ответил. Проверьте ключ и бесплатные лимиты Google AI Studio." }); }
+      const configuredModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
+      const modelCandidates = [configuredModel, ...(configuredModel !== "gemini-3.1-flash-lite" ? ["gemini-3.1-flash-lite"] : [])];
+      let result: any = null;
+      let activeModel = configuredModel;
+      let providerStatus = 0;
+      let providerCode = "";
+      for (let index = 0; index < modelCandidates.length; index++) {
+        const candidate = modelCandidates[index];
+        const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${encodeURIComponent(geminiKey)}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: system }] },
+            contents,
+            generationConfig: { temperature: 0.2, maxOutputTokens: 4500 }
+          }),
+        });
+        const upstreamText = await upstream.text();
+        try { result = upstreamText ? JSON.parse(upstreamText) : {}; }
+        catch {
+          console.error("Gemini returned non-JSON response", { status: upstream.status, model: candidate });
+          return res.status(502).json({ error: "Gemini вернул ответ в неожиданном формате.", providerStatus: upstream.status, model: candidate });
+        }
+        providerStatus = upstream.status;
+        providerCode = String(result?.error?.status || result?.error?.code || "");
+        if (upstream.ok) { activeModel = candidate; break; }
+        console.error("Gemini API request failed", {
+          status: upstream.status, code: providerCode, model: candidate,
+          message: String(result?.error?.message || "").slice(0, 1000)
+        });
+        // Если конкретная модель недоступна для проекта, пробуем резервную модель бесплатного уровня.
+        if (upstream.status === 404 && index < modelCandidates.length - 1) continue;
+        const errorMessage =
+          upstream.status === 401 || upstream.status === 403
+            ? "Google отклонил доступ к Gemini API. Проверьте, что ключ действителен, проект доступен для Gemini API и ключ не ограничен другим API."
+            : upstream.status === 404
+              ? "Выбранная модель Gemini недоступна этому проекту. Проверьте GEMINI_MODEL в настройках Vercel."
+              : upstream.status === 429
+                ? "Исчерпан бесплатный лимит Gemini API или достигнуто ограничение частоты запросов. Проверьте квоты проекта в Google AI Studio и повторите позже."
+                : upstream.status === 400
+                  ? "Gemini отклонил параметры запроса. Проверьте настройки модели и формат запроса."
+                  : upstream.status >= 500
+                    ? "Сервис Gemini временно недоступен. Повторите запрос позже."
+                    : "Gemini API вернул ошибку. Проверьте настройки проекта и ключа.";
+        return res.status(502).json({ error: errorMessage, providerStatus, providerCode, model: candidate });
+      }
       const answer = result.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("").trim();
       if (!answer) return res.status(502).json({ error: "ИИ вернул пустой ответ. Попробуйте сформулировать вопрос иначе." });
-      return res.status(200).json({ answer, sources: legalRetrieval.sources.map(({ excerpt, ...source }) => source) });
+      return res.status(200).json({ answer, model: activeModel, sources: legalRetrieval.sources.map(({ excerpt, ...source }) => source) });
     }
-    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
-      body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-4.1", temperature: 0.2, messages: [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.content }))] }),
-    });
-    const upstreamText = await upstream.text();
-    let result: any;
-    try { result = upstreamText ? JSON.parse(upstreamText) : {}; } catch { throw new Error("OpenAI вернул ответ в неожиданном формате"); }
-    if (!upstream.ok) { console.error("OpenAI API error:", result?.error?.message || upstream.status); return res.status(502).json({ error: "Не удалось получить ответ ИИ. Проверьте настройки API и баланс." }); }
-    const answer = result.choices?.[0]?.message?.content;
-    if (typeof answer !== "string" || !answer.trim()) return res.status(502).json({ error: "ИИ вернул пустой ответ. Попробуйте сформулировать вопрос иначе." });
-    return res.status(200).json({ answer, sources: legalRetrieval.sources.map(({ excerpt, ...source }) => source) });
+    return res.status(503).json({ error: "Gemini API не настроен." });
   } catch (error) {
     console.error("Legal assistant provider request failed:", error);
     return res.status(502).json({ error: "ИИ-провайдер временно не ответил. Повторите запрос позже." });
