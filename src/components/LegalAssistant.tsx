@@ -59,6 +59,8 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       }
       setMessages([...next, { role: "assistant", content: data.answer }].slice(-12));
     } catch (err) {
+      setMessages(messages);
+      setInput(text);
       setError(err instanceof Error ? err.message : (isKk ? "Қате орын алды." : "Произошла ошибка."));
     } finally {
       setBusy(false);
