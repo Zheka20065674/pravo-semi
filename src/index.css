@@ -256,3 +256,23 @@ body { background:var(--paper); color:var(--ink); font-family:Inter, "Segoe UI",
 .chat-documents-link button { border:0; color:#a17b46; background:none; font-size:10px; font-weight:750; cursor:pointer; }
 @media(max-width:900px) { .legal-assistant-wrap { grid-template-columns:1fr; gap:28px; }.legal-assistant-intro { max-width:720px; }.legal-assistant-section { padding:58px 6%; } }
 @media(max-width:560px) { .legal-chat-head { align-items:flex-start; flex-direction:column; }.legal-chat-body { min-height:260px; padding:15px; }.chat-message { max-width:100%; }.chat-form-bottom,.chat-documents-link { align-items:flex-start; flex-direction:column; }.chat-form-bottom .btn { width:100%; }.assistant-expert strong { font-size:15px; } }
+
+
+/* Legal assistant v2: clearer entry points, compact controls and mobile-first chat. */
+.chat-reset { padding:8px 11px; border:1px solid #dce5e9; border-radius:5px; color:#526d7e; background:#fff; font-size:10px; font-weight:700; cursor:pointer; }
+.chat-reset:hover:not(:disabled) { border-color:#b18a52; color:#8e6c3e; background:#fbf8f2; }
+.chat-reset:disabled { cursor:not-allowed; opacity:.5; }
+.chat-suggestions-label { margin:22px 0 10px; color:#9a805b; font-size:9px; font-weight:800; letter-spacing:.12em; }
+.chat-suggestions { display:grid; grid-template-columns:1fr 1fr; gap:8px; text-align:left; }
+.chat-suggestions button { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; min-height:54px; padding:10px 11px; border:1px solid #e1e8eb; border-radius:5px; color:#526a7b; background:#fff; text-align:left; font-size:10px; line-height:1.5; cursor:pointer; transition:border-color .18s ease,background .18s ease; }
+.chat-suggestions button:hover { border-color:#c9b28e; background:#fcfaf6; }
+.chat-suggestions button span { flex:0 0 auto; color:#a17b46; font-size:14px; }
+.chat-documents-link small { display:block; margin-top:4px; color:#9aa6ad; font-size:9px; line-height:1.5; }
+.legal-chat-form textarea:focus { border-color:#9db9c9; box-shadow:0 0 0 3px #9db9c91c; outline:0; }
+.legal-chat-form textarea:disabled { background:#f5f7f8; }
+@media(max-width:560px) {
+  .chat-suggestions { grid-template-columns:1fr; }
+  .chat-suggestions button { min-height:unset; }
+  .chat-reset { align-self:flex-start; }
+  .chat-welcome { width:100%; }
+}
