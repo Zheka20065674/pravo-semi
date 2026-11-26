@@ -41,7 +41,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
         : "Для продолжения подтвердите, что понимаете: сообщение будет передано внешнему ИИ-сервису.");
       return;
     }
-    const next: Message[] = [...messages, { role: "user", content: text }].slice(-10);
+    const next: Message[] = [...messages, { role: "user" as const, content: text }].slice(-10);
     setMessages(next);
     setInput("");
     setBusy(true);
@@ -57,7 +57,8 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       if (typeof data.answer !== "string" || !data.answer.trim()) {
         throw new Error(isKk ? "Жауап алынбады. Қайталап көріңіз." : "Не удалось получить ответ. Попробуйте ещё раз.");
       }
-      setMessages([...next, { role: "assistant", content: data.answer }].slice(-12));
+      const updated: Message[] = [...next, { role: "assistant" as const, content: data.answer }];
+      setMessages(updated.slice(-12));
     } catch (err) {
       setMessages(messages);
       setInput(text);
