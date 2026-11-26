@@ -144,7 +144,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
                 <span className={source.status === "retrieved" ? "source-indicator available" : "source-indicator unavailable"}></span>
                 <a href={source.url} target="_blank" rel="noreferrer">{source.title}</a>
                 <small>{source.status === "retrieved"
-                  ? (isKk ? "Мәтін осы сұрау кезінде алынды · " : "Текст получен при этом запросе · ") + new Date(source.checkedAt).toLocaleString(isKk ? "kk-KZ" : "ru-RU")
+                  ? (isKk ? "Мәтін сервер арқылы алынды · " : "Текст получен сервером · ") + new Date(source.checkedAt).toLocaleString(isKk ? "kk-KZ" : "ru-RU")
                   : (isKk ? "Мәтінді алу мүмкін болмады; сілтеме қолжетімді." : "Не удалось получить текст; ссылка доступна для проверки.")}</small>
               </div>)}
               {message.sources.length > 0 && message.sources.every(source => source.status !== "retrieved") && <p className="source-warning">{isKk ? "Бұл жауап ресми мәтіннен алынған үзінділермен расталмады. Маңызды нормаларды Әділет жүйесінен қолмен тексеріңіз." : "Этот ответ не удалось подтвердить извлечёнными фрагментами официального текста. Проверьте важные нормы непосредственно в ИПС «Әділет»."}</p>}
