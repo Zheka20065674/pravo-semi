@@ -122,7 +122,7 @@ export async function retrieveOfficialSources(query: string): Promise<{ sources:
   const results = await Promise.all(selected.map(async source => {
     try {
       let cached = legalTextCache.get(source.id);
-      if (!cached) {
+      if (!cached || Date.now() - Date.parse(cached.checkedAt) > 10 * 60 * 1000) {
         let html = "";
         for (const url of [source.url, source.alternateUrl]) {
           try {
