@@ -276,3 +276,18 @@ body { background:var(--paper); color:var(--ink); font-family:Inter, "Segoe UI",
   .chat-reset { align-self:flex-start; }
   .chat-welcome { width:100%; }
 }
+
+
+/* Verifiable legal-source trail shown with every AI answer. */
+.answer-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.answer-actions .answer-print { margin-top:0; }
+.chat-sources { margin-top:16px; padding:13px 14px; border:1px solid #e3ebef; border-radius:7px; background:#f8fbfc; }
+.chat-sources>b { display:block; margin-bottom:10px; color:#738997; font-size:9px; letter-spacing:.1em; }
+.chat-source { position:relative; display:grid; grid-template-columns:8px 1fr; column-gap:9px; margin:9px 0; }
+.chat-source a { color:#2c6e99; font-size:11px; font-weight:700; line-height:1.5; text-decoration:underline; text-decoration-color:#b6d1e2; text-underline-offset:2px; }
+.chat-source a:hover { color:#174e78; }
+.chat-source small { grid-column:2; margin-top:3px; color:#8797a1; font-size:9px; line-height:1.45; }
+.source-indicator { width:7px; height:7px; margin-top:5px; border-radius:50%; background:#c28c55; }
+.source-indicator.available { background:#4c9b7b; }
+.source-indicator.unavailable { background:#c28c55; }
+.source-warning { margin:11px 0 0; padding:9px 10px; border-left:2px solid #c28c55; color:#796542; background:#fbf6ec; font-size:10px; line-height:1.6; }
