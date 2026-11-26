@@ -16,6 +16,7 @@ type RequestBody = { messages?: { role: "user" | "assistant"; content: string }[
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  try {
   const geminiKey = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!geminiKey && !openaiKey) return res.status(503).json({ error: "ИИ-ассистент не подключён. Добавьте GEMINI_API_KEY (бесплатный уровень Gemini API) или OPENAI_API_KEY в переменные окружения Vercel." });
@@ -71,7 +72,7 @@ export default async function handler(req: any, res: any) {
 - Для каждого кейса отделять юридические факты от оценок, устанавливать предмет доказывания, распределение бремени доказывания, относимость/допустимость/достоверность доказательств и процессуальные сроки. Не делать вывод только из одного факта.
 - Это общая доктринальная схема. Она не является текстом закона и не подтверждает актуальность конкретной статьи. Приоритет имеют действующие НПА РК и официальные разъяснения, проверенные на дату ответа.`;
 
-  const system = `Ты — ИИ-ассистент образовательной правовой платформы «Право Семьи», специализирующийся на семейном праве Республики Казахстан. Ты не являешься адвокатом, судьёй, нотариусом или реальным юристом. Всегда обозначай ответ как предварительную информационно-правовую помощь.
+  const system = `Ты — виртуальный помощник по семейному праву Республики Казахстан на платформе «Право Семьи». Твоё имя и публичная персона: Касенов Бахтияр Бахтиярович. При первом обращении в новом диалоге начинай ответ строго фразой: «Приветствую! Я Касенов Бахтияр Бахтиярович, ваш виртуальный помощник в семейном праве Республики Казахстан». Не повторяй полное приветствие в каждом последующем сообщении. Всегда ясно обозначай, что это виртуальный ИИ-помощник, а не реальный человек, адвокат, судья или нотариус; не заявляй о наличии лицензии или личного опыта ведения дел. Ответы являются информационно-правовой помощью.
 
 Язык ответа: ${lang === "kk" ? "казахский" : "русский"}.
 Задача: сначала внимательно понять свободное описание человека, затем при необходимости задать только самые важные уточняющие вопросы. Не запускай анкету и не перечисляй десятки вопросов. Сначала попроси описать ситуацию своими словами; уточняй по одному или по два вопроса только когда это влияет на правовой вывод.
@@ -110,7 +111,9 @@ export default async function handler(req: any, res: any) {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { temperature: 0.2, maxOutputTokens: 4500 } }),
       });
-      const result = await upstream.json();
+      const upstreamText = await upstream.text();
+      let result: any;
+      try { result = upstreamText ? JSON.parse(upstreamText) : {}; } catch { throw new Error("Gemini вернул ответ в неожиданном формате"); }
       if (!upstream.ok) { console.error("Gemini API error:", result?.error?.message || upstream.status); return res.status(502).json({ error: "Gemini API не ответил. Проверьте ключ и бесплатные лимиты Google AI Studio." }); }
       const answer = result.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("").trim();
       if (!answer) return res.status(502).json({ error: "ИИ вернул пустой ответ. Попробуйте сформулировать вопрос иначе." });
@@ -120,12 +123,19 @@ export default async function handler(req: any, res: any) {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
       body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-4.1", temperature: 0.2, messages: [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.content }))] }),
     });
-    const result = await upstream.json();
+    const upstreamText = await upstream.text();
+    let result: any;
+    try { result = upstreamText ? JSON.parse(upstreamText) : {}; } catch { throw new Error("OpenAI вернул ответ в неожиданном формате"); }
     if (!upstream.ok) { console.error("OpenAI API error:", result?.error?.message || upstream.status); return res.status(502).json({ error: "Не удалось получить ответ ИИ. Проверьте настройки API и баланс." }); }
     const answer = result.choices?.[0]?.message?.content;
     if (typeof answer !== "string" || !answer.trim()) return res.status(502).json({ error: "ИИ вернул пустой ответ. Попробуйте сформулировать вопрос иначе." });
     return res.status(200).json({ answer, sources: legalRetrieval.sources.map(({ excerpt, ...source }) => source) });
-  } catch {
-    return res.status(502).json({ error: "Сервис анализа временно недоступен." });
+  } catch (error) {
+    console.error("Legal assistant provider request failed:", error);
+    return res.status(502).json({ error: "ИИ-провайдер временно не ответил. Повторите запрос позже." });
+  }
+  } catch (error) {
+    console.error("Legal assistant handler failed:", error);
+    return res.status(500).json({ error: "Внутренняя ошибка сервиса правовой помощи. Запрос не обработан." });
   }
 }

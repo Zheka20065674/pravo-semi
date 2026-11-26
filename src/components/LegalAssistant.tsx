@@ -119,7 +119,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
         : "Задайте вопрос в свободной форме — длинную анкету заполнять не нужно. При необходимости ассистент задаст уточняющие вопросы и поможет подготовить проект документа."}</p>
       <div className="assistant-expert">
         <span className="expert-monogram">§</span>
-        <div><b>{isKk ? "ЖАСАНДЫ ИНТЕЛЛЕКТ" : "ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ"}</b><strong>Право Семьи AI</strong><small>{isKk ? "Қазақстан Республикасының отбасы құқығына маманданған виртуалды көмекші. Нақты адам немесе адвокат емес." : "Виртуальный помощник по семейному праву Республики Казахстан. Не является реальным человеком или адвокатом."}</small></div>
+        <div><b>{isKk ? "ВИРТУАЛДЫ AI-КӨМЕКШІ" : "ВИРТУАЛЬНЫЙ ИИ-ПОМОЩНИК"}</b><strong>Касенов Бахтияр Бахтиярович</strong><small>{isKk ? "Отбасы құқығы бойынша ақпараттық көмек көрсететін жасанды интеллект. Нақты адам немесе адвокат емес." : "ИИ-помощник по семейному праву Республики Казахстан. Это виртуальная персона, а не реальный человек или адвокат."}</small></div>
       </div>
       <div className="assistant-process">
         <span>01 · {isKk ? "Жағдайды талдау" : "Анализ ситуации"}</span>
@@ -138,7 +138,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       </div>
       <div className="legal-chat-body" aria-live="polite">
         {messages.length === 0 && <div className="chat-welcome">
-          <span>§</span><h3>{welcomeTitle}</h3><p>{welcomeText}</p>
+          <span>§</span><h3>{welcomeTitle}</h3><p className="assistant-greeting">Приветствую! Я Касенов Бахтияр Бахтиярович, ваш виртуальный помощник в семейном праве Республики Казахстан.</p><p>{welcomeText}</p>
           <div className="chat-suggestions-label">{isKk ? "НЕМЕСЕ ТАҚЫРЫПТЫ ТАҢДАҢЫЗ" : "ИЛИ ВЫБЕРИТЕ ТЕМУ"}</div>
           <div className="chat-suggestions">{prompts[language].map((prompt) => <button type="button" key={prompt} onClick={() => { setInput(prompt); setError(""); }}>{prompt}<span>↗</span></button>)}</div>
         </div>}
