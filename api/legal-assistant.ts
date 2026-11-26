@@ -20,9 +20,17 @@ export default async function handler(req: any, res: any) {
   if (!geminiKey && !openaiKey) return res.status(503).json({ error: "ИИ-ассистент не подключён. Добавьте GEMINI_API_KEY (бесплатный уровень Gemini API) или OPENAI_API_KEY в переменные окружения Vercel." });
 
   const body = (req.body || {}) as RequestBody;
-  const messages = Array.isArray(body.messages) ? body.messages.slice(-12) : [];
-  if (!messages.length || messages.some(m => !m || !["user", "assistant"].includes(m.role) || typeof m.content !== "string" || m.content.length > 7000)) {
-    return res.status(400).json({ error: "Некорректный формат сообщения. Максимальная длина одного сообщения — 7 000 символов." });
+  const messages = Array.isArray(body.messages) ? body.messages.slice(-10) : [];
+  const totalChars = messages.reduce((sum, message) => sum + (typeof message?.content === "string" ? message.content.length : 0), 0);
+  const invalidMessages = messages.some((message, index) =>
+    !message ||
+    !["user", "assistant"].includes(message.role) ||
+    typeof message.content !== "string" ||
+    message.content.length > (message.role === "user" ? 4000 : 12000) ||
+    (index > 0 && message.role === messages[index - 1].role)
+  );
+  if (!messages.length || invalidMessages || totalChars > 26000 || !messages.some(message => message.role === "user") || messages[messages.length - 1].role !== "user") {
+    return res.status(400).json({ error: "Некорректный диалог. Сообщение пользователя — до 4 000 символов; история диалога ограничена." });
   }
 
   const lang = body.language === "kk" ? "kk" : "ru";
@@ -48,6 +56,7 @@ export default async function handler(req: any, res: any) {
 1) Кратко изложить факты и отдельно отметить, что пока неизвестно.
 2) Юридическая квалификация и правовые вопросы.
 3) Применимые нормы законодательства РК: точное название акта, статья/пункт только если уверен; объяснить содержание нормы и применимость к фактам. Основные акты: Кодекс РК «О браке (супружестве) и семье» https://adilet.zan.kz/rus/docs/K1100000518 ; ГПК РК https://adilet.zan.kz/rus/docs/K1500000377 ; Конституция РК https://adilet.zan.kz/rus/docs/K950001000_ . Проверяй точность номеров статей по известным данным; если не уверен в актуальной редакции/номере — прямо так и скажи и дай ссылку на Adilet для проверки. Не выдумывай статьи, сроки, суммы, судебную практику или цитаты.
+   Для каждой конкретной правовой нормы указывай источник: название НПА, статью/пункт и прямую ссылку на соответствующую страницу Adilet, если такая ссылка известна. Отделяй норму закона от собственного анализа. Если в контексте правовой карты указан статус draft/research, не представляй её содержание как проверенную юридическую позицию. Указывай дату проверки источника только если она прямо содержится в контексте; не утверждай, что открыл или проверил Adilet в реальном времени. Если нет достаточного основания для точной статьи, не угадывай — обозначь, что норму требуется проверить.
 4) Анализ применения нормы к каждому существенному обстоятельству, позиции обеих сторон, доказательства, риски и альтернативы.
 5) Практические следующие шаги по порядку.
 6) Какие документы могут потребоваться и зачем. Сначала используй библиотеку документов платформы: брачный договор, иск о расторжении брака, соглашение о разделе имущества, соглашение об уплате алиментов, иск об определении места жительства ребёнка, соглашение о порядке общения с ребёнком, отзыв на иск, апелляционная жалоба. Уточняй, какой документ действительно подходит.
