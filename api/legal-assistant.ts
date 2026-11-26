@@ -45,7 +45,15 @@ export default async function handler(req: any, res: any) {
   const latestQuestion = lang === "kk"
     ? kkTerms.reduce((query, [pattern, replacement]) => query.replace(pattern, replacement), latestQuestionRaw)
     : latestQuestionRaw;
-  const legalRetrieval = await retrieveOfficialSources(latestQuestion);
+  // Законодательные источники — вспомогательный этап. Их временная недоступность
+  // не должна обрушать весь API-обработчик и возвращать Vercel HTML вместо JSON.
+  let legalRetrieval: Awaited<ReturnType<typeof retrieveOfficialSources>>;
+  try {
+    legalRetrieval = await retrieveOfficialSources(latestQuestion);
+  } catch (error) {
+    console.error("Official legal-source retrieval failed:", error);
+    legalRetrieval = { sources: [], context: "" };
+  }
   const retrievedCount = legalRetrieval.sources.filter(source => source.status === "retrieved").length;
   const retrievalContext = legalRetrieval.context
     ? "НАЙДЕНО ОФИЦИАЛЬНЫХ ИСТОЧНИКОВ: " + retrievedCount + " из " + legalRetrieval.sources.length + "\n\n" + legalRetrieval.context

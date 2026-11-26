@@ -53,7 +53,18 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: next, language }),
       });
-      const data = await response.json();
+      // Некоторые ошибки платформы (например, Vercel 500/502) возвращают
+      // обычный текст или HTML. Не вызываем response.json() вслепую.
+      const responseText = await response.text();
+      let data: any;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        console.error("Legal assistant returned a non-JSON response:", response.status, responseText.slice(0, 300));
+        throw new Error(isKk
+          ? "Сервер қатесі. Қызмет уақытша қолжетімсіз. Біраздан соң қайталап көріңіз."
+          : `Сервер временно не смог обработать запрос (HTTP ${response.status}). Попробуйте позже.`);
+      }
       if (!response.ok) throw new Error(data.error || (isKk ? "Қызмет уақытша қолжетімсіз." : "Сервис временно недоступен."));
       if (typeof data.answer !== "string" || !data.answer.trim()) {
         throw new Error(isKk ? "Жауап алынбады. Қайталап көріңіз." : "Не удалось получить ответ. Попробуйте ещё раз.");
