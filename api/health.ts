@@ -6,9 +6,11 @@ export default function handler(req: any, res: any) {
     service: "pravo-semi-api",
     route: "/api/health",
     runtime: "nodejs",
-    providersConfigured: Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY),
+    providersConfigured: Boolean(process.env.GEMINI_API_KEY),
     geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
-    openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
+    provider: "Google Gemini API",
+    model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
+    fallbackModel: "gemini-3.1-flash-lite",
     timestamp: new Date().toISOString()
   });
 }
