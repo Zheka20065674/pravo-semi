@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
   }
 
   const lang = body.language === "kk" ? "kk" : "ru";
-  const latestQuestionRaw = messages.filter(message => message.role === "user").slice(-3).map(message => message.content).join("\\n").slice(-9000);
+  const latestQuestionRaw = messages.filter(message => message.role === "user").slice(-3).map(message => message.content).join("\n").slice(-9000);
   const kkTerms: Array<[RegExp, string]> = [
     [/неке|ерлі-зайыптылық/gi, "брак"], [/ажырас|бұзу/gi, "расторжение"], [/алимент/gi, "алименты"],
     [/бала|баланың|балалар/gi, "ребёнок дети"], [/мүлік|меншік/gi, "имущество собственность"],
@@ -48,7 +48,7 @@ export default async function handler(req: any, res: any) {
   const legalRetrieval = await retrieveOfficialSources(latestQuestion);
   const retrievedCount = legalRetrieval.sources.filter(source => source.status === "retrieved").length;
   const retrievalContext = legalRetrieval.context
-    ? "НАЙДЕНО ОФИЦИАЛЬНЫХ ИСТОЧНИКОВ: " + retrievedCount + " из " + legalRetrieval.sources.length + ".\\n\\n" + legalRetrieval.context
+    ? "НАЙДЕНО ОФИЦИАЛЬНЫХ ИСТОЧНИКОВ: " + retrievedCount + " из " + legalRetrieval.sources.length + "\n\n" + legalRetrieval.context
     : "ВНИМАНИЕ: в текущем запросе не удалось получить релевантные фрагменты официальных НПА из ИПС «Әділет». Не утверждай, что нормы проверены по действующей редакции. Дай ссылку на официальный акт и обозначь необходимость ручной проверки.";
   const doctrineContext = `ОСНОВЫ ДОГМАТИКИ СЕМЕЙНОГО ПРАВА (ОБЩИЙ УЧЕБНЫЙ КАРКАС, НЕ ЗАМЕНЯЕТ ПРОВЕРКУ НОРМ РК):
 - Предмет семейного права: личные неимущественные и имущественные отношения между супругами, родителями и детьми, а также иными членами семьи в случаях, прямо предусмотренных законом.
