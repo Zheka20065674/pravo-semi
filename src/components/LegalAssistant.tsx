@@ -61,9 +61,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
         data = responseText ? JSON.parse(responseText) : {};
       } catch {
         console.error("Legal assistant returned a non-JSON response:", response.status, responseText.slice(0, 300));
-        throw new Error(isKk
-          ? "Сервер қатесі. Қызмет уақытша қолжетімсіз. Біраздан соң қайталап көріңіз."
-          : `Сервер временно не смог обработать запрос (HTTP ${response.status}). Попробуйте позже.`);
+        throw new Error(data?.error ? `${data.error}${data.errorId ? ` Код: ${data.errorId}` : ""}` : (isKk ? `Сервер қатесі (HTTP ${response.status}).` : `Ошибка сервера (HTTP ${response.status}).`));
       }
       if (!response.ok) throw new Error(data.error || (isKk ? "Қызмет уақытша қолжетімсіз." : "Сервис временно недоступен."));
       if (typeof data.answer !== "string" || !data.answer.trim()) {

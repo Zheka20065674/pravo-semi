@@ -1,7 +1,8 @@
-import { documentDefinitions } from "../src/data/documentRequirements";
-import { retrieveOfficialSources } from "../src/data/legalRetrieval";
+let legalReferenceContext = "";
 
-const legalReferenceContext = documentDefinitions.map(doc => [
+async function loadDocumentReferenceContext(): Promise<string> {
+  const { documentDefinitions } = await import("../src/data/documentRequirements");
+  return documentDefinitions.map(doc => [
   `ДОКУМЕНТ: ${doc.title} [статус материала: ${doc.status}]`,
   `Назначение: ${doc.purpose}`,
   `Источники: ${doc.legalSources.map(s => `${s.act}, ст. ${s.article} — ${s.title} (${s.url}; проверено в реестре ${s.checkedOn})`).join("; ")}`,
@@ -11,16 +12,20 @@ const legalReferenceContext = documentDefinitions.map(doc => [
   `Процессуальные заметки: ${doc.processNotes.map(x => `${x.label}: ${x.explanation}`).join(" | ")}`,
   `Ограничения: ${doc.limitations.join(" | ")}`,
 ].join("\n")).join("\n\n").slice(0, 26000);
+}
 
 type RequestBody = { messages?: { role: "user" | "assistant"; content: string }[]; language?: "ru" | "kk" };
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  let stage = "request-start";
   try {
+  stage = "configuration";
   const geminiKey = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!geminiKey && !openaiKey) return res.status(503).json({ error: "ИИ-ассистент не подключён. Добавьте GEMINI_API_KEY (бесплатный уровень Gemini API) или OPENAI_API_KEY в переменные окружения Vercel." });
 
+  stage = "request-validation";
   const body = (req.body || {}) as RequestBody;
   const messages = Array.isArray(body.messages) ? body.messages.slice(-10) : [];
   const totalChars = messages.reduce((sum, message) => sum + (typeof message?.content === "string" ? message.content.length : 0), 0);
@@ -35,6 +40,7 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: "Некорректный диалог. Сообщение пользователя — до 4 000 символов; история диалога ограничена." });
   }
 
+  stage = "context-loading";
   const lang = body.language === "kk" ? "kk" : "ru";
   const latestQuestionRaw = messages.filter(message => message.role === "user").slice(-3).map(message => message.content).join("\n").slice(-9000);
   const kkTerms: Array<[RegExp, string]> = [
@@ -48,13 +54,15 @@ export default async function handler(req: any, res: any) {
     : latestQuestionRaw;
   // Законодательные источники — вспомогательный этап. Их временная недоступность
   // не должна обрушать весь API-обработчик и возвращать Vercel HTML вместо JSON.
-  let legalRetrieval: Awaited<ReturnType<typeof retrieveOfficialSources>>;
+  let legalRetrieval: { sources: any[]; context: string };
   try {
+    const { retrieveOfficialSources } = await import("../src/data/legalRetrieval");
     legalRetrieval = await retrieveOfficialSources(latestQuestion);
   } catch (error) {
     console.error("Official legal-source retrieval failed:", error);
     legalRetrieval = { sources: [], context: "" };
   }
+  try { legalReferenceContext = await loadDocumentReferenceContext(); } catch (error) { console.error("Document reference context unavailable:", error); legalReferenceContext = ""; }
   const retrievedCount = legalRetrieval.sources.filter(source => source.status === "retrieved").length;
   const retrievalContext = legalRetrieval.context
     ? "НАЙДЕНО ОФИЦИАЛЬНЫХ ИСТОЧНИКОВ: " + retrievedCount + " из " + legalRetrieval.sources.length + "\n\n" + legalRetrieval.context
@@ -104,6 +112,7 @@ export default async function handler(req: any, res: any) {
 Конфиденциальность: попроси не сообщать ИИН, полные адреса, телефоны, банковские данные, пароли и точные данные детей; если они пришли, не повторяй их в ответе. Не проси загружать оригиналы личных документов.
 Ограничение базы: сервер пытается получить только выбранные официальные акты из ИПС «Әділет» для каждого запроса. Это не полная база всех НПА, не поиск по судебной практике и не проверка материалов дела. Даже при успешном получении фрагментов не утверждай, что вся законодательная база загружена или что каждая применимая норма проверена.`;
 
+  stage = "provider-request";
   try {
     if (geminiKey) {
       const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
@@ -135,7 +144,8 @@ export default async function handler(req: any, res: any) {
     return res.status(502).json({ error: "ИИ-провайдер временно не ответил. Повторите запрос позже." });
   }
   } catch (error) {
-    console.error("Legal assistant handler failed:", error);
-    return res.status(500).json({ error: "Внутренняя ошибка сервиса правовой помощи. Запрос не обработан." });
+    const errorId = `ps-${Date.now().toString(36)}`;
+    console.error(JSON.stringify({ event: "legal_assistant_unhandled_error", errorId, stage, message: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined }));
+    return res.status(500).json({ error: "Внутренняя ошибка сервиса правовой помощи.", errorId, stage });
   }
 }
