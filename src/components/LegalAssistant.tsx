@@ -2,7 +2,8 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 
 type Lang = "ru" | "kk";
-type Message = { role: "user" | "assistant"; content: string };
+type SourceLink = { id: string; title: string; url: string; status: "retrieved" | "unavailable"; checkedAt: string };
+type Message = { role: "user" | "assistant"; content: string; sources?: SourceLink[] };
 
 const prompts: Record<Lang, string[]> = {
   ru: [
@@ -57,7 +58,8 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       if (typeof data.answer !== "string" || !data.answer.trim()) {
         throw new Error(isKk ? "Жауап алынбады. Қайталап көріңіз." : "Не удалось получить ответ. Попробуйте ещё раз.");
       }
-      const updated: Message[] = [...next, { role: "assistant" as const, content: data.answer }];
+      const sources: SourceLink[] = Array.isArray(data.sources) ? data.sources.filter((source: any) => source && typeof source.title === "string" && typeof source.url === "string" && (source.status === "retrieved" || source.status === "unavailable")) : [];
+      const updated: Message[] = [...next, { role: "assistant" as const, content: data.answer, sources }];
       setMessages(updated.slice(-12));
     } catch (err) {
       setMessages(messages);
@@ -65,6 +67,15 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       setError(err instanceof Error ? err.message : (isKk ? "Қате орын алды." : "Произошла ошибка."));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function copyAnswer(content: string) {
+    try {
+      await navigator.clipboard.writeText(content);
+      setError(isKk ? "Мәтін көшірілді." : "Текст ответа скопирован.");
+    } catch {
+      setError(isKk ? "Көшіру мүмкін болмады. Мәтінді қолмен белгілеңіз." : "Не удалось скопировать. Выделите текст вручную.");
     }
   }
 
@@ -122,7 +133,23 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
         </div>}
         {messages.map((message, index) => <div className={`chat-message ${message.role}`} key={index}>
           <span>{message.role === "assistant" ? "§" : (isKk ? "Сіз" : "Вы")}</span>
-          <div>{message.content}{message.role === "assistant" && <button className="answer-print" type="button" onClick={() => saveAnswer(message.content)}>{isKk ? "PDF ретінде сақтау / басып шығару" : "Сохранить в PDF / распечатать"}</button>}</div>
+          <div>{message.content}{message.role === "assistant" && <>
+            <div className="answer-actions">
+              <button className="answer-print" type="button" onClick={() => saveAnswer(message.content)}>{isKk ? "PDF ретінде сақтау / басып шығару" : "Сохранить в PDF / распечатать"}</button>
+              <button className="answer-print" type="button" onClick={() => copyAnswer(message.content)}>{isKk ? "Көшіру" : "Скопировать"}</button>
+            </div>
+            {message.sources && <div className="chat-sources">
+              <b>{isKk ? "РЕСМИ ҚҰҚЫҚТЫҚ ДЕРЕККӨЗДЕР" : "ОФИЦИАЛЬНЫЕ ПРАВОВЫЕ ИСТОЧНИКИ"}</b>
+              {message.sources.map(source => <div className="chat-source" key={source.id}>
+                <span className={source.status === "retrieved" ? "source-indicator available" : "source-indicator unavailable"}></span>
+                <a href={source.url} target="_blank" rel="noreferrer">{source.title}</a>
+                <small>{source.status === "retrieved"
+                  ? (isKk ? "Мәтін сервер арқылы алынды · " : "Текст получен сервером · ") + new Date(source.checkedAt).toLocaleString(isKk ? "kk-KZ" : "ru-RU")
+                  : (isKk ? "Мәтінді алу мүмкін болмады; сілтеме қолжетімді." : "Не удалось получить текст; ссылка доступна для проверки.")}</small>
+              </div>)}
+              {message.sources.length > 0 && message.sources.every(source => source.status !== "retrieved") && <p className="source-warning">{isKk ? "Бұл жауап ресми мәтіннен алынған үзінділермен расталмады. Маңызды нормаларды Әділет жүйесінен қолмен тексеріңіз." : "Этот ответ не удалось подтвердить извлечёнными фрагментами официального текста. Проверьте важные нормы непосредственно в ИПС «Әділет»."}</p>}
+            </div>}
+          </>}</div>
         </div>)}
         {busy && <div className="chat-thinking"><span></span><span></span><span></span>{isKk ? "Жағдай мен құқықтық нормаларды талдау..." : "Анализирую обстоятельства и правовые нормы..."}</div>}
       </div>
