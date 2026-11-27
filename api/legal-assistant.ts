@@ -14,7 +14,7 @@ async function loadDocumentReferenceContext(): Promise<string> {
 ].join("\n")).join("\n\n").slice(0, 26000);
 }
 
-type RequestBody = { messages?: { role: "user" | "assistant"; content: string }[]; language?: "ru" | "kk" };
+type RequestBody = { messages?: { role: "user" | "assistant"; content: string }[]; language?: "ru" | "kk"; consentAccepted?: boolean };
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -26,6 +26,7 @@ export default async function handler(req: any, res: any) {
 
   stage = "request-validation";
   const body = (req.body || {}) as RequestBody;
+  if (body.consentAccepted !== true) return res.status(400).json({ error: "Для работы с Бахтияром Бахтияровичем необходимо принять пользовательское соглашение." });
   const messages = Array.isArray(body.messages) ? body.messages.slice(-10) : [];
   const totalChars = messages.reduce((sum, message) => sum + (typeof message?.content === "string" ? message.content.length : 0), 0);
   const invalidMessages = messages.some((message, index) =>
@@ -112,7 +113,7 @@ export default async function handler(req: any, res: any) {
 - Если для документа не хватает существенных фактов, задай уточняющие вопросы до составления.
 - Не выдавай черновик за готовый к подаче документ. Отметь, что перед подписанием/подачей нужно проверить актуальную редакцию закона, подсудность, сроки, госпошлину и комплект приложений.
 - Соблюдай деловой юридический стиль и стандартную структуру соответствующего документа: адресат, сведения о сторонах, название, фактические обстоятельства, правовое обоснование, просительная часть (если применима), приложения, дата и подпись.
-- Не используй Markdown-обрамление из звёздочек (** или ***). Не выделяй названия НПА звёздочками. Используй ясные заголовки, нумерацию, абзацы и нормативные кавычки «ёлочки»; пунктуация должна соответствовать русскому или казахскому языку.
+- Не используй Markdown-разметку и символы звёздочки для выделения текста. Не выводи **, *** или одиночные звёздочки вокруг слов. Названия НПА оформляй кавычками «ёлочки». Используй ясные заголовки, нумерацию и абзацы; пунктуация должна соответствовать русскому или казахскому языку.
 
 Внутренний справочный материал проекта (это не полный свод законодательства; записи со статусом draft/research не считать проверенными готовыми правовыми позициями):\n\n${legalReferenceContext}\n\n${doctrineContext}\n\n${retrievalContext}\n\nПравила работы с найденным текстом: называй статью только если номер и её содержание видны в извлечённом официальном фрагменте. Прямо различай: (а) факт получения официальной страницы; (б) найденный фрагмент; (в) проверку вступления нормы в силу на дату события. Само получение страницы не гарантирует, что конкретная поправка уже вступила в силу. Если текст неполный, не достраивай норму по памяти. Указывай прямую ссылку на акт и дату/время получения фрагмента, но не называй выборку полным текстом кодекса.
 
@@ -124,9 +125,9 @@ export default async function handler(req: any, res: any) {
   try {
     if (geminiKey) {
       const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-      const configuredModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash-lite";
-      // Keep the configured model first, then try stable, cost-efficient free-tier fallbacks.
-      const modelCandidates = Array.from(new Set(["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.8-flash", configuredModel]));
+      const configuredModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite";
+      // Prefer the documented, cost-efficient free-tier Flash-Lite model. Try the newer Flash model only as a fallback because it can be temporarily overloaded.
+      const modelCandidates = Array.from(new Set(["gemini-3.1-flash-lite", "gemini-3.8-flash", configuredModel]));
       let result: any = null;
       let activeModel = configuredModel;
       let providerStatus = 0;

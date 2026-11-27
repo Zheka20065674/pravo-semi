@@ -17,5 +17,7 @@ export function assistantTextToHtml(value: string): string {
     .replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    // Remove any malformed/unpaired Markdown emphasis markers left by model output.
+    .replace(/\*{1,3}/g, "")
     .replace(/\n/g, "<br />");
 }
