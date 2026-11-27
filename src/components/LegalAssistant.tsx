@@ -106,7 +106,10 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
   }
 
   function downloadBlankSample(content: string) {
-    const blank = content.replace(/\[[^\]]+\]/g, "________________________________________");
+    const marker = isKk ? "ТОЛТЫРУҒА АРНАЛҒАН ҮЛГІ" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ";
+    const markerIndex = content.toUpperCase().indexOf(marker);
+    const sampleText = markerIndex >= 0 ? content.slice(markerIndex + marker.length) : content;
+    const blank = sampleText.replace(/\[[^\]]+\]/g, "________________________________________");
     const html = '<!doctype html><html lang="' + language + '"><head><meta charset="utf-8"><title>' + (isKk ? "Құжат үлгісі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ") + '</title><style>@page{size:A4;margin:20mm 15mm 20mm 25mm}body{font:14pt/1.5 "Times New Roman",serif;color:#111}h1,h2,h3{font-size:14pt}p{text-align:justify;margin:0 0 10pt}</style></head><body><h1>' + (isKk ? "Құжат үлгісі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ") + '</h1>' + assistantTextToHtml(blank) + '</body></html>';
     const blob = new Blob(["\ufeff", html], { type: "application/msword;charset=utf-8" });
     const url = URL.createObjectURL(blob);
