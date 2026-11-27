@@ -31,6 +31,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [consent, setConsent] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
 
   async function send(event?: FormEvent, suggestedText?: string) {
     event?.preventDefault();
@@ -117,16 +118,14 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
         : "Задайте вопрос в свободной форме — длинную анкету заполнять не нужно. При необходимости ассистент задаст уточняющие вопросы и поможет подготовить проект документа."}</p>
       <div className="assistant-expert">
         <span className="expert-monogram">§</span>
-        <div><b>{isKk ? "ВИРТУАЛДЫ AI-КӨМЕКШІ" : "ВИРТУАЛЬНЫЙ ИИ-ПОМОЩНИК"}</b><strong>Касенов Бахтияр Бахтиярович</strong><small>{isKk ? "Отбасы құқығы бойынша ақпараттық көмек көрсететін жасанды интеллект. Нақты адам немесе адвокат емес." : "ИИ-помощник по семейному праву Республики Казахстан. Это виртуальная персона, а не реальный человек или адвокат."}</small></div>
+        <div><b>{isKk ? "ВИРТУАЛДЫ AI-КӨМЕКШІ" : "ВИРТУАЛЬНЫЙ ИИ-ПОМОЩНИК"}</b><strong>Касенов Бахтияр Бахтиярович</strong><small>{isKk ? "Қазақстан Республикасының отбасы құқығы бойынша виртуалды ИИ-заңгер" : "Виртуальный ИИ-юрист по семейному праву Республики Казахстан"}</small></div>
       </div>
       <div className="assistant-process">
         <span>01 · {isKk ? "Жағдайды талдау" : "Анализ ситуации"}</span>
         <span>02 · {isKk ? "Қолданылатын нормалар" : "Применимые нормы"}</span>
         <span>03 · {isKk ? "Әрекет және құжат" : "Действия и документы"}</span>
       </div>
-      <p className="assistant-disclaimer">{isKk
-        ? "Жауаптар ақпараттық сипатта. ИИ қателесуі мүмкін; маңызды нормалар мен мерзімдерді «Әділет» жүйесінен және маманнан тексеріңіз."
-        : "Ответы носят информационный характер. ИИ может ошибаться; важные нормы и сроки необходимо сверять с ИПС «Әділет» и специалистом."}</p>
+      
     </div>
 
     <div className="legal-chat">
@@ -136,7 +135,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       </div>
       <div className="legal-chat-body" aria-live="polite">
         {messages.length === 0 && <div className="chat-welcome">
-          <span>§</span><h3>{welcomeTitle}</h3><p className="assistant-greeting">Приветствую! Я Касенов Бахтияр Бахтиярович, ваш виртуальный помощник в семейном праве Республики Казахстан.</p><p>{welcomeText}</p>
+          <span>§</span><h3>{welcomeTitle}</h3><p className="assistant-greeting">{isKk ? "Сәлеметсіз бе! Мен — Бахтияр Бахтиярович Касенов, «Право Семьи» платформасының виртуалды заңгерімін." : "Здравствуйте! Я Касенов Бахтияр Бахтиярович, виртуальный юрист платформы «Право Семьи»."}</p><p>{welcomeText}</p>
           <div className="chat-suggestions-label">{isKk ? "НЕМЕСЕ ТАҚЫРЫПТЫ ТАҢДАҢЫЗ" : "ИЛИ ВЫБЕРИТЕ ТЕМУ"}</div>
           <div className="chat-suggestions">{prompts[language].map((prompt) => <button type="button" key={prompt} onClick={() => { setInput(prompt); setError(""); }}>{prompt}<span>↗</span></button>)}</div>
         </div>}
@@ -170,7 +169,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
             : "Я понимаю, что сообщение передаётся внешнему ИИ-провайдеру для обработки, и не указываю ИИН, полный адрес, телефон, банковские данные и персональные данные детей."}
         </label>
         {error && <p className="chat-error" role="alert">{error}</p>}
-        <div className="chat-form-bottom"><small>{isKk ? "Диалог осы браузерде ғана көрсетіледі; хабарлама өңделеді Gemini API арқылы." : "Сообщение обрабатывается подключённым ИИ-провайдером. Не отправляйте документы и избыточные персональные данные."}</small>
+        <div className="chat-form-bottom"><small>{isKk ? "Gemini арқылы өңделеді." : "Обработка: Google Gemini."}</small>
           <button className="btn btn-primary" disabled={busy || !input.trim()} type="submit">{busy ? (isKk ? "Талдау..." : "Анализ...") : (isKk ? "Жіберу ↑" : "Отправить ↑")}</button>
         </div>
       </form>
