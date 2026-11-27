@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { assistantTextToHtml, escapeAssistantHtml } from "../utils/assistantFormatting";
 
 type Lang = "ru" | "kk";
 type SourceLink = { id: string; title: string; url: string; status: "retrieved" | "unavailable"; checkedAt: string };
@@ -141,9 +142,10 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
         </div>}
         {messages.map((message, index) => <div className={`chat-message ${message.role}`} key={index}>
           <span>{message.role === "assistant" ? "§" : (isKk ? "Сіз" : "Вы")}</span>
-          <div>{message.content}{message.role === "assistant" && <>
+          <div>{message.role === "assistant" ? <div className="assistant-rich-text" dangerouslySetInnerHTML={{ __html: assistantTextToHtml(message.content) }} /> : message.content}{message.role === "assistant" && <>
             <div className="answer-actions">
               <button className="answer-print" type="button" onClick={() => saveAnswer(message.content)}>{isKk ? "PDF ретінде сақтау / басып шығару" : "Сохранить в PDF / распечатать"}</button>
+              {/(ПРОЕКТ ДОКУМЕНТА|ЖОБА ҚҰЖАТ|ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ|ТОЛТЫРУҒА АРНАЛҒАН ҮЛГІ)/i.test(message.content) && <button className="answer-print answer-download-sample" type="button" onClick={() => downloadBlankSample(message.content)}>{isKk ? "Жүктеп алуға арналған үлгі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ"}</button>}
               <button className="answer-print" type="button" onClick={() => copyAnswer(message.content)}>{isKk ? "Көшіру" : "Скопировать"}</button>
             </div>
             {message.sources && <div className="chat-sources">
@@ -163,11 +165,10 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       </div>
       <form className="legal-chat-form" onSubmit={send}>
         <textarea value={input} onChange={e => setInput(e.target.value)} rows={3} maxLength={4000} placeholder={isKk ? "Жағдайды өз сөзіңізбен жазыңыз..." : "Опишите ситуацию своими словами..."} aria-label={isKk ? "Жағдай сипаттамасы" : "Описание ситуации"} />
-        <label className="privacy-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
-          {isKk
-            ? "Хабарлама сыртқы ИИ-провайдеріне өңдеу үшін жіберілетінін түсінемін және ЖСН, толық мекенжай, телефон, банк деректері мен балалардың жеке деректерін енгізбеймін."
-            : "Я понимаю, что сообщение передаётся внешнему ИИ-провайдеру для обработки, и не указываю ИИН, полный адрес, телефон, банковские данные и персональные данные детей."}
-        </label>
+        <label className="privacy-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />{isKk ? "Пайдаланушы келісімімен таныстым және оны қабылдаймын." : "Я ознакомился с пользовательским соглашением и принимаю его."}</label>
+        <details className="user-terms"><summary>{isKk ? "Пайдаланушы келісімін оқу" : "Прочитать пользовательское соглашение"}</summary>
+          {isKk ? <div><p>Сервис — отбасылық құқық мәселелерін түсіндіруге және құжат жобаларын дайындауға арналған виртуалды ИИ-құрал. Ол адвокат, нотариус немесе мемлекеттік орган емес және адвокат пен клиент арасындағы қатынастарды құрмайды.</p><p>Хабарламалар Google Gemini API арқылы өңделеді. Сұрауларды өңдеу үшінші тарап инфрақұрылымы пайдаланылады; Google-дың деректерді өңдеу шарттары мен құпиялылық саясаты қолданылады.</p><p>Жауаптар алдын ала ақпараттық сипатта болады. ЖИ қателесуі немесе маңызды мән-жайларды ескермеуі мүмкін. Қолданылатын нормаларды, олардың редакциясын, мерзімдер мен рәсімдерді «Әділет» жүйесіндегі қолданыстағы заңнамамен тексеріңіз.</p><p>Сервис сот шешіміне кепілдік бермейді және заң көмегін көрсету туралы шарт болып табылмайды. ЖСН, құжаттардың толық көшірмелерін, нақты мекенжайды, телефонды, банк деректерін, парольдерді және балаларды сәйкестендіретін мәліметтерді енгізбеңіз.</p><p>Белгі қою арқылы пайдаланушы осы шарттарды қабылдайды және хабарламаларын сыртқы ИИ-провайдеріне өңдеуге жіберуге келіседі.</p></div> : <div><p>Сервис — семейно-правовой виртуальный ИИ-инструмент для объяснения правовых вопросов и подготовки проектов документов. Он не является адвокатом, нотариусом или государственным органом и не создаёт отношений «адвокат — клиент».</p><p>Сообщения передаются Google Gemini API для обработки. Для обработки запросов используется инфраструктура внешнего поставщика; применяются условия обработки данных и политика конфиденциальности Google.</p><p>Ответы носят предварительный информационный характер. ИИ может ошибаться или упускать существенные обстоятельства. Применимые нормы, их редакцию, сроки и процедуры необходимо сверять с действующим законодательством в ИПС «Әділет».</p><p>Сервис не гарантирует исход судебного дела и не является договором об оказании юридической помощи. Не вводите ИИН, полные копии документов, точный адрес, телефон, банковские реквизиты, пароли и данные, позволяющие идентифицировать детей.</p><p>Устанавливая отметку, пользователь принимает условия соглашения и соглашается на передачу сообщений внешнему ИИ-провайдеру для обработки.</p></div>}
+        </details>
         {error && <p className="chat-error" role="alert">{error}</p>}
         <div className="chat-form-bottom"><small>{isKk ? "Gemini арқылы өңделеді." : "Обработка: Google Gemini."}</small>
           <button className="btn btn-primary" disabled={busy || !input.trim()} type="submit">{busy ? (isKk ? "Талдау..." : "Анализ...") : (isKk ? "Жіберу ↑" : "Отправить ↑")}</button>
