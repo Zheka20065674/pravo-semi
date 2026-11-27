@@ -1,11 +1,11 @@
 export function escapeAssistantHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (char) => ({
+  const entities: Record<string, string> = {
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  }[char] || char));
+    "\"": "&quot;",
+  };
+  return value.replace(/[&<>"]/g, (char) => entities[char] ?? char);
 }
 
 export function assistantTextToHtml(value: string): string {
