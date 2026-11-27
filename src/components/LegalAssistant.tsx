@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { assistantTextToHtml } from "../utils/assistantFormatting";
 
 type Lang = "ru" | "kk";
 type SourceLink = { id: string; title: string; url: string; status: "retrieved" | "unavailable"; checkedAt: string };
@@ -96,11 +97,27 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
   }
 
   function saveAnswer(content: string) {
-    const printable = `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><title>${isKk ? "Құқықтық талдау" : "Правовой разбор"}</title><style>@page{size:A4;margin:20mm}body{font:14pt/1.55 "Times New Roman",serif;color:#172b3b}h1{font-size:18pt}pre{white-space:pre-wrap;font:inherit}</style></head><body><h1>${isKk ? "Құқықтық талдау" : "Правовой разбор"}</h1><pre>${content.replace(/[&<>]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]!))}</pre><p><small>${isKk ? "Ақпараттық материал. Заңгердің жеке қорытындысы емес." : "Информационный материал. Не является индивидуальным заключением юриста."}</small></p><script>window.onload=()=>window.print()<\\/script></body></html>`;
+    const printable = '<!doctype html><html lang="' + language + '"><head><meta charset="utf-8"><title>' + (isKk ? "Құқықтық құжат" : "Правовой документ") + '</title><style>@page{size:A4;margin:20mm 15mm 20mm 25mm}body{font:14pt/1.5 "Times New Roman",serif;color:#111}h1,h2,h3{font-size:14pt}p{text-align:justify;margin:0 0 10pt}strong{font-weight:bold}</style></head><body><h1>' + (isKk ? "Құқықтық талдау" : "Правовой разбор") + '</h1>' + assistantTextToHtml(content) + '</body></html>';
     const w = window.open("", "_blank");
-    if (!w) { setError(isKk ? "Басып шығару терезесін ашуға рұқсат беріңіз." : "Разрешите открыть окно печати."); return; }
-    w.document.write(printable);
+    if (!w) { setError(isKk ? "Басып шығару терезесін ашуға рұқсат беріңіз." : "Разрешите всплывающие окна для сохранения PDF."); return; }
+    w.document.open();
+    w.document.write(printable + '<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),300));<\/script>');
     w.document.close();
+  }
+
+  function downloadBlankSample(content: string) {
+    const marker = isKk ? "ТОЛТЫРУҒА АРНАЛҒАН ҮЛГІ" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ";
+    const markerIndex = content.toUpperCase().indexOf(marker);
+    const sampleText = markerIndex >= 0 ? content.slice(markerIndex + marker.length) : content;
+    const blank = sampleText.replace(/\[[^\]]+\]/g, "________________________________________");
+    const html = '<!doctype html><html lang="' + language + '"><head><meta charset="utf-8"><title>' + (isKk ? "Құжат үлгісі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ") + '</title><style>@page{size:A4;margin:20mm 15mm 20mm 25mm}body{font:14pt/1.5 "Times New Roman",serif;color:#111}h1,h2,h3{font-size:14pt}p{text-align:justify;margin:0 0 10pt}</style></head><body><h1>' + (isKk ? "Құжат үлгісі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ") + '</h1>' + assistantTextToHtml(blank) + '</body></html>';
+    const blob = new Blob(["\ufeff", html], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = isKk ? "qujat-ulgisi.doc" : "obrazec-dlya-skachivaniya.doc";
+    document.body.appendChild(anchor); anchor.click(); anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
 
   const welcomeTitle = isKk ? "Отбасы құқығы бойынша сұрағыңызды жазыңыз" : "Опишите свой вопрос по семейному праву";
@@ -117,16 +134,14 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
         : "Задайте вопрос в свободной форме — длинную анкету заполнять не нужно. При необходимости ассистент задаст уточняющие вопросы и поможет подготовить проект документа."}</p>
       <div className="assistant-expert">
         <span className="expert-monogram">§</span>
-        <div><b>{isKk ? "ВИРТУАЛДЫ AI-КӨМЕКШІ" : "ВИРТУАЛЬНЫЙ ИИ-ПОМОЩНИК"}</b><strong>Касенов Бахтияр Бахтиярович</strong><small>{isKk ? "Отбасы құқығы бойынша ақпараттық көмек көрсететін жасанды интеллект. Нақты адам немесе адвокат емес." : "ИИ-помощник по семейному праву Республики Казахстан. Это виртуальная персона, а не реальный человек или адвокат."}</small></div>
+        <div><b>{isKk ? "ВИРТУАЛДЫ AI-КӨМЕКШІ" : "ВИРТУАЛЬНЫЙ ИИ-ПОМОЩНИК"}</b><strong>Касенов Бахтияр Бахтиярович</strong><small>{isKk ? "Қазақстан Республикасының отбасы құқығы бойынша виртуалды ИИ-заңгер" : "Виртуальный ИИ-юрист по семейному праву Республики Казахстан"}</small></div>
       </div>
       <div className="assistant-process">
         <span>01 · {isKk ? "Жағдайды талдау" : "Анализ ситуации"}</span>
         <span>02 · {isKk ? "Қолданылатын нормалар" : "Применимые нормы"}</span>
         <span>03 · {isKk ? "Әрекет және құжат" : "Действия и документы"}</span>
       </div>
-      <p className="assistant-disclaimer">{isKk
-        ? "Жауаптар ақпараттық сипатта. ИИ қателесуі мүмкін; маңызды нормалар мен мерзімдерді «Әділет» жүйесінен және маманнан тексеріңіз."
-        : "Ответы носят информационный характер. ИИ может ошибаться; важные нормы и сроки необходимо сверять с ИПС «Әділет» и специалистом."}</p>
+      
     </div>
 
     <div className="legal-chat">
@@ -136,15 +151,16 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       </div>
       <div className="legal-chat-body" aria-live="polite">
         {messages.length === 0 && <div className="chat-welcome">
-          <span>§</span><h3>{welcomeTitle}</h3><p className="assistant-greeting">Приветствую! Я Касенов Бахтияр Бахтиярович, ваш виртуальный помощник в семейном праве Республики Казахстан.</p><p>{welcomeText}</p>
+          <span>§</span><h3>{welcomeTitle}</h3><p className="assistant-greeting">{isKk ? "Сәлеметсіз бе! Мен — Бахтияр Бахтиярович Касенов, «Право Семьи» платформасының виртуалды заңгерімін." : "Здравствуйте! Я Касенов Бахтияр Бахтиярович, виртуальный юрист платформы «Право Семьи»."}</p><p>{welcomeText}</p>
           <div className="chat-suggestions-label">{isKk ? "НЕМЕСЕ ТАҚЫРЫПТЫ ТАҢДАҢЫЗ" : "ИЛИ ВЫБЕРИТЕ ТЕМУ"}</div>
           <div className="chat-suggestions">{prompts[language].map((prompt) => <button type="button" key={prompt} onClick={() => { setInput(prompt); setError(""); }}>{prompt}<span>↗</span></button>)}</div>
         </div>}
         {messages.map((message, index) => <div className={`chat-message ${message.role}`} key={index}>
           <span>{message.role === "assistant" ? "§" : (isKk ? "Сіз" : "Вы")}</span>
-          <div>{message.content}{message.role === "assistant" && <>
+          <div>{message.role === "assistant" ? <div className="assistant-rich-text" dangerouslySetInnerHTML={{ __html: assistantTextToHtml(message.content) }} /> : message.content}{message.role === "assistant" && <>
             <div className="answer-actions">
               <button className="answer-print" type="button" onClick={() => saveAnswer(message.content)}>{isKk ? "PDF ретінде сақтау / басып шығару" : "Сохранить в PDF / распечатать"}</button>
+              {/(ПРОЕКТ ДОКУМЕНТА|ЖОБА ҚҰЖАТ|ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ|ТОЛТЫРУҒА АРНАЛҒАН ҮЛГІ)/i.test(message.content) && <button className="answer-print answer-download-sample" type="button" onClick={() => downloadBlankSample(message.content)}>{isKk ? "Жүктеп алуға арналған үлгі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ"}</button>}
               <button className="answer-print" type="button" onClick={() => copyAnswer(message.content)}>{isKk ? "Көшіру" : "Скопировать"}</button>
             </div>
             {message.sources && <div className="chat-sources">
@@ -164,13 +180,12 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       </div>
       <form className="legal-chat-form" onSubmit={send}>
         <textarea value={input} onChange={e => setInput(e.target.value)} rows={3} maxLength={4000} placeholder={isKk ? "Жағдайды өз сөзіңізбен жазыңыз..." : "Опишите ситуацию своими словами..."} aria-label={isKk ? "Жағдай сипаттамасы" : "Описание ситуации"} />
-        <label className="privacy-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
-          {isKk
-            ? "Хабарлама сыртқы ИИ-провайдеріне өңдеу үшін жіберілетінін түсінемін және ЖСН, толық мекенжай, телефон, банк деректері мен балалардың жеке деректерін енгізбеймін."
-            : "Я понимаю, что сообщение передаётся внешнему ИИ-провайдеру для обработки, и не указываю ИИН, полный адрес, телефон, банковские данные и персональные данные детей."}
-        </label>
+        <label className="privacy-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />{isKk ? "Пайдаланушы келісімімен таныстым және оны қабылдаймын." : "Я ознакомился с пользовательским соглашением и принимаю его."}</label>
+        <details className="user-terms"><summary>{isKk ? "Пайдаланушы келісімін оқу" : "Прочитать пользовательское соглашение"}</summary>
+          {isKk ? <div><p>Сервис — отбасылық құқық мәселелерін түсіндіруге және құжат жобаларын дайындауға арналған виртуалды ИИ-құрал. Ол адвокат, нотариус немесе мемлекеттік орган емес және адвокат пен клиент арасындағы қатынастарды құрмайды.</p><p>Хабарламалар Google Gemini API арқылы өңделеді. Сұрауларды өңдеу үшінші тарап инфрақұрылымы пайдаланылады; Google-дың деректерді өңдеу шарттары мен құпиялылық саясаты қолданылады.</p><p>Жауаптар алдын ала ақпараттық сипатта болады. ЖИ қателесуі немесе маңызды мән-жайларды ескермеуі мүмкін. Қолданылатын нормаларды, олардың редакциясын, мерзімдер мен рәсімдерді «Әділет» жүйесіндегі қолданыстағы заңнамамен тексеріңіз.</p><p>Сервис сот шешіміне кепілдік бермейді және заң көмегін көрсету туралы шарт болып табылмайды. ЖСН, құжаттардың толық көшірмелерін, нақты мекенжайды, телефонды, банк деректерін, парольдерді және балаларды сәйкестендіретін мәліметтерді енгізбеңіз.</p><p>Белгі қою арқылы пайдаланушы осы шарттарды қабылдайды және хабарламаларын сыртқы ИИ-провайдеріне өңдеуге жіберуге келіседі.</p></div> : <div><p>Сервис — семейно-правовой виртуальный ИИ-инструмент для объяснения правовых вопросов и подготовки проектов документов. Он не является адвокатом, нотариусом или государственным органом и не создаёт отношений «адвокат — клиент».</p><p>Сообщения передаются Google Gemini API для обработки. Для обработки запросов используется инфраструктура внешнего поставщика; применяются условия обработки данных и политика конфиденциальности Google.</p><p>Ответы носят предварительный информационный характер. ИИ может ошибаться или упускать существенные обстоятельства. Применимые нормы, их редакцию, сроки и процедуры необходимо сверять с действующим законодательством в ИПС «Әділет».</p><p>Сервис не гарантирует исход судебного дела и не является договором об оказании юридической помощи. Не вводите ИИН, полные копии документов, точный адрес, телефон, банковские реквизиты, пароли и данные, позволяющие идентифицировать детей.</p><p>Устанавливая отметку, пользователь принимает условия соглашения и соглашается на передачу сообщений внешнему ИИ-провайдеру для обработки.</p></div>}
+        </details>
         {error && <p className="chat-error" role="alert">{error}</p>}
-        <div className="chat-form-bottom"><small>{isKk ? "Диалог осы браузерде ғана көрсетіледі; хабарлама өңделеді Gemini API арқылы." : "Сообщение обрабатывается подключённым ИИ-провайдером. Не отправляйте документы и избыточные персональные данные."}</small>
+        <div className="chat-form-bottom"><small>{isKk ? "Gemini арқылы өңделеді." : "Обработка: Google Gemini."}</small>
           <button className="btn btn-primary" disabled={busy || !input.trim()} type="submit">{busy ? (isKk ? "Талдау..." : "Анализ...") : (isKk ? "Жіберу ↑" : "Отправить ↑")}</button>
         </div>
       </form>

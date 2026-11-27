@@ -291,3 +291,19 @@ body { background:var(--paper); color:var(--ink); font-family:Inter, "Segoe UI",
 .source-indicator.available { background:#4c9b7b; }
 .source-indicator.unavailable { background:#c28c55; }
 .source-warning { margin:11px 0 0; padding:9px 10px; border-left:2px solid #c28c55; color:#796542; background:#fbf6ec; font-size:10px; line-height:1.6; }
+
+
+/* Assistant agreement, clean rich text and downloadable document actions. */
+.chat-message.assistant>div { white-space:normal; }
+.assistant-rich-text { white-space:normal; overflow-wrap:anywhere; }
+.assistant-rich-text p { margin:0 0 10px; }
+.assistant-rich-text h1,.assistant-rich-text h2,.assistant-rich-text h3 { margin:14px 0 8px; color:#203d52; line-height:1.35; }
+.assistant-rich-text h1 { font-size:17px; }
+.assistant-rich-text h2 { font-size:15px; }
+.assistant-rich-text h3 { font-size:13px; }
+.assistant-rich-text strong { font-weight:750; color:#233f54; }
+.user-terms { margin:4px 0 12px 24px; color:#667b88; font-size:10px; line-height:1.6; }
+.user-terms summary { color:#2d6b92; text-decoration:underline; cursor:pointer; }
+.user-terms>div { margin-top:10px; padding:12px; border:1px solid #e0e8ec; border-radius:6px; background:#f8fafb; }
+.user-terms p { margin:0 0 9px; }
+.answer-download-sample { border-color:#c5b18e; color:#80623a; font-weight:800; }
