@@ -32,7 +32,6 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [consent, setConsent] = useState(false);
-  const [termsOpen, setTermsOpen] = useState(false);
 
   async function send(event?: FormEvent, suggestedText?: string) {
     event?.preventDefault();
