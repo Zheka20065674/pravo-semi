@@ -52,7 +52,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
       const response = await fetch("/api/legal-assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, language }),
+        body: JSON.stringify({ messages: next, language, consentAccepted: consent }),
       });
       // Некоторые ошибки платформы (например, Vercel 500/502) возвращают
       // обычный текст или HTML. Не вызываем response.json() вслепую.
@@ -97,12 +97,30 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
   }
 
   function saveAnswer(content: string) {
-    const printable = '<!doctype html><html lang="' + language + '"><head><meta charset="utf-8"><title>' + (isKk ? "Құқықтық құжат" : "Правовой документ") + '</title><style>@page{size:A4;margin:20mm 15mm 20mm 25mm}body{font:14pt/1.5 "Times New Roman",serif;color:#111}h1,h2,h3{font-size:14pt}p{text-align:justify;margin:0 0 10pt}strong{font-weight:bold}</style></head><body><h1>' + (isKk ? "Құқықтық талдау" : "Правовой разбор") + '</h1>' + assistantTextToHtml(content) + '</body></html>';
-    const w = window.open("", "_blank");
-    if (!w) { setError(isKk ? "Басып шығару терезесін ашуға рұқсат беріңіз." : "Разрешите всплывающие окна для сохранения PDF."); return; }
-    w.document.open();
-    w.document.write(printable + '<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),300));<\/script>');
-    w.document.close();
+    const printable = '<!doctype html><html lang="' + language + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + (isKk ? "Құқықтық құжат" : "Правовой документ") + '</title><style>@page{size:A4;margin:20mm 15mm 20mm 25mm}body{font:14pt/1.5 "Times New Roman",serif;color:#111}h1,h2,h3{font-size:14pt}p{text-align:justify;margin:0 0 10pt}strong{font-weight:bold}ul,ol{padding-left:24pt}li{margin-bottom:5pt}</style></head><body><h1>' + (isKk ? "Құқықтық құжат" : "Правовой документ") + '</h1>' + assistantTextToHtml(content) + '</body></html>';
+    // Печать из iframe не зависит от разрешения всплывающих окон, что особенно важно на мобильных устройствах.
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.style.position = "fixed";
+    frame.style.width = "1px";
+    frame.style.height = "1px";
+    frame.style.right = "0";
+    frame.style.bottom = "0";
+    frame.style.border = "0";
+    frame.style.opacity = "0";
+    frame.onload = () => {
+      try {
+        frame.contentWindow?.focus();
+        frame.contentWindow?.print();
+        setError(isKk ? "Басып шығару терезесі ашылды. PDF сақтау үшін принтер тізімінен «PDF ретінде сақтау» таңдаңыз." : "Открылось окно печати. Для сохранения PDF выберите «Сохранить как PDF» в списке принтеров.");
+      } catch {
+        setError(isKk ? "Басып шығару ашылмады. Браузер мәзірінен «Басып шығару» пәрменін таңдаңыз." : "Не удалось открыть печать. Используйте меню браузера → «Печать».");
+      } finally {
+        window.setTimeout(() => frame.remove(), 30000);
+      }
+    };
+    document.body.appendChild(frame);
+    frame.srcdoc = printable;
   }
 
   function downloadBlankSample(content: string) {
