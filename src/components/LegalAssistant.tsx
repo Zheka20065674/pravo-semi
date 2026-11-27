@@ -159,7 +159,6 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
             <div className="answer-actions">
               <button className="answer-print" type="button" onClick={() => saveAnswer(message.content)}>{isKk ? "PDF ретінде сақтау / басып шығару" : "Сохранить в PDF / распечатать"}</button>
               {/(ПРОЕКТ ДОКУМЕНТА|ЖОБА ҚҰЖАТ|ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ|ТОЛТЫРУҒА АРНАЛҒАН ҮЛГІ)/i.test(message.content) && <button className="answer-print answer-download-sample" type="button" onClick={() => downloadBlankSample(message.content)}>{isKk ? "Жүктеп алуға арналған үлгі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ"}</button>}
-              {/(ПРОЕКТ ДОКУМЕНТА|ЖОБА ҚҰЖАТ|ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ|ТОЛТЫРУҒА АРНАЛҒАН ҮЛГІ)/i.test(message.content) && <button className="answer-print answer-download-sample" type="button" onClick={() => downloadBlankSample(message.content)}>{isKk ? "Жүктеп алуға арналған үлгі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ"}</button>}
               <button className="answer-print" type="button" onClick={() => copyAnswer(message.content)}>{isKk ? "Көшіру" : "Скопировать"}</button>
             </div>
             {message.sources && <div className="chat-sources">
