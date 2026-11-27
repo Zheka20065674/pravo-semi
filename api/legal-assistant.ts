@@ -42,6 +42,8 @@ export default async function handler(req: any, res: any) {
   stage = "context-loading";
   const lang = body.language === "kk" ? "kk" : "ru";
   const latestQuestionRaw = messages.filter(message => message.role === "user").slice(-3).map(message => message.content).join("\n").slice(-9000);
+  // Для коротких приветствий не загружаем законодательные акты и длинный справочный контекст.
+  const isSimpleGreeting = messages.length === 1 && /^(привет|здравствуйте|добрый день|доброе утро|добрый вечер|сәлем|сәлеметсіз бе)[!.\s]*$/i.test(latestQuestionRaw.trim());
   const kkTerms: Array<[RegExp, string]> = [
     [/неке|ерлі-зайыптылық/gi, "брак"], [/ажырас|бұзу/gi, "расторжение"], [/алимент/gi, "алименты"],
     [/бала|баланың|балалар/gi, "ребёнок дети"], [/мүлік|меншік/gi, "имущество собственность"],
@@ -54,14 +56,18 @@ export default async function handler(req: any, res: any) {
   // Законодательные источники — вспомогательный этап. Их временная недоступность
   // не должна обрушать весь API-обработчик и возвращать Vercel HTML вместо JSON.
   let legalRetrieval: { sources: any[]; context: string };
-  try {
+  if (isSimpleGreeting) {
+    legalRetrieval = { sources: [], context: "" };
+  } else try {
     const { retrieveOfficialSources } = await import("../src/data/legalRetrieval");
     legalRetrieval = await retrieveOfficialSources(latestQuestion);
   } catch (error) {
     console.error("Official legal-source retrieval failed:", error);
     legalRetrieval = { sources: [], context: "" };
   }
-  try { legalReferenceContext = await loadDocumentReferenceContext(); } catch (error) { console.error("Document reference context unavailable:", error); legalReferenceContext = ""; }
+  if (!isSimpleGreeting) {
+    try { legalReferenceContext = await loadDocumentReferenceContext(); } catch (error) { console.error("Document reference context unavailable:", error); legalReferenceContext = ""; }
+  }
   const retrievedCount = legalRetrieval.sources.filter(source => source.status === "retrieved").length;
   const retrievalContext = legalRetrieval.context
     ? "НАЙДЕНО ОФИЦИАЛЬНЫХ ИСТОЧНИКОВ: " + retrievedCount + " из " + legalRetrieval.sources.length + "\n\n" + legalRetrieval.context
@@ -111,12 +117,18 @@ export default async function handler(req: any, res: any) {
 Конфиденциальность: попроси не сообщать ИИН, полные адреса, телефоны, банковские данные, пароли и точные данные детей; если они пришли, не повторяй их в ответе. Не проси загружать оригиналы личных документов.
 Ограничение базы: сервер пытается получить только выбранные официальные акты из ИПС «Әділет» для каждого запроса. Это не полная база всех НПА, не поиск по судебной практике и не проверка материалов дела. Даже при успешном получении фрагментов не утверждай, что вся законодательная база загружена или что каждая применимая норма проверена.`;
 
+  const effectiveSystem = isSimpleGreeting
+    ? "Ты — Касенов Бахтияр Бахтиярович, виртуальный ИИ-помощник по семейному праву Республики Казахстан. Ты не реальный человек и не адвокат. Ответь на приветствие кратко и вежливо на русском языке, представься и предложи описать семейно-правовую ситуацию. Не выдумывай факты."
+    : system;
+
   stage = "provider-request";
   try {
     if (geminiKey) {
       const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-      const configuredModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
-      const modelCandidates = [configuredModel, ...(configuredModel !== "gemini-3.1-flash-lite" ? ["gemini-3.1-flash-lite"] : [])];
+      // На бесплатном тарифе начинаем с более лёгкой модели; при её недоступности используем Flash.
+      const configuredModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite";
+      const fallbackModel = configuredModel === "gemini-3.1-flash-lite" ? "gemini-3.8-flash" : "gemini-3.1-flash-lite";
+      const modelCandidates = [configuredModel, fallbackModel];
       let result: any = null;
       let activeModel = configuredModel;
       let providerStatus = 0;
@@ -126,10 +138,11 @@ export default async function handler(req: any, res: any) {
         const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${encodeURIComponent(geminiKey)}`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: system }] },
+            systemInstruction: { parts: [{ text: effectiveSystem }] },
             contents,
-            generationConfig: { temperature: 0.2, maxOutputTokens: 4500 }
+            generationConfig: { temperature: 0.2, maxOutputTokens: isSimpleGreeting ? 160 : 1800 }
           }),
+          signal: AbortSignal.timeout(22000),
         });
         const upstreamText = await upstream.text();
         try { result = upstreamText ? JSON.parse(upstreamText) : {}; }
@@ -145,7 +158,7 @@ export default async function handler(req: any, res: any) {
           message: String(result?.error?.message || "").slice(0, 1000)
         });
         // Если конкретная модель недоступна для проекта, пробуем резервную модель бесплатного уровня.
-        if (upstream.status === 404 && index < modelCandidates.length - 1) continue;
+        if ([404, 429, 500, 502, 503, 504].includes(upstream.status) && index < modelCandidates.length - 1) continue;
         const errorMessage =
           upstream.status === 401 || upstream.status === 403
             ? "Google отклонил доступ к Gemini API. Проверьте, что ключ действителен, проект доступен для Gemini API и ключ не ограничен другим API."
