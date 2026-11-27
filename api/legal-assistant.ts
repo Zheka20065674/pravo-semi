@@ -51,21 +51,29 @@ export default async function handler(req: any, res: any) {
   const latestQuestion = lang === "kk"
     ? kkTerms.reduce((query, [pattern, replacement]) => query.replace(pattern, replacement), latestQuestionRaw)
     : latestQuestionRaw;
-  // Законодательные источники — вспомогательный этап. Их временная недоступность
-  // не должна обрушать весь API-обработчик и возвращать Vercel HTML вместо JSON.
-  let legalRetrieval: { sources: any[]; context: string };
-  try {
-    const { retrieveOfficialSources } = await import("../src/data/legalRetrieval");
-    legalRetrieval = await retrieveOfficialSources(latestQuestion);
-  } catch (error) {
-    console.error("Official legal-source retrieval failed:", error);
-    legalRetrieval = { sources: [], context: "" };
+  // Для обычного приветствия не загружаем кодексы и библиотеку документов:
+  // это сокращает задержку и не расходует лимит внешнего API на юридический поиск.
+  const latestUserText = messages.filter(message => message.role === "user").at(-1)?.content.trim() || "";
+  const isSimpleGreeting = /^(привет|здравствуй(?:те)?|добрый день|доброе утро|добрый вечер|сәлем|сәлеметсіз бе|қайырлы күн|hello|hi)[!.,\s😊🙂👋]*$/iu.test(latestUserText);
+  let legalRetrieval: { sources: any[]; context: string } = { sources: [], context: "" };
+  if (!isSimpleGreeting) {
+    try {
+      const { retrieveOfficialSources } = await import("../src/data/legalRetrieval");
+      legalRetrieval = await retrieveOfficialSources(latestQuestion);
+    } catch (error) {
+      console.error("Official legal-source retrieval failed:", error);
+    }
+    try { legalReferenceContext = await loadDocumentReferenceContext(); }
+    catch (error) { console.error("Document reference context unavailable:", error); legalReferenceContext = ""; }
+  } else {
+    legalReferenceContext = "";
   }
-  try { legalReferenceContext = await loadDocumentReferenceContext(); } catch (error) { console.error("Document reference context unavailable:", error); legalReferenceContext = ""; }
   const retrievedCount = legalRetrieval.sources.filter(source => source.status === "retrieved").length;
-  const retrievalContext = legalRetrieval.context
-    ? "НАЙДЕНО ОФИЦИАЛЬНЫХ ИСТОЧНИКОВ: " + retrievedCount + " из " + legalRetrieval.sources.length + "\n\n" + legalRetrieval.context
-    : "ВНИМАНИЕ: в текущем запросе не удалось получить релевантные фрагменты официальных НПА из ИПС «Әділет». Не утверждай, что нормы проверены по действующей редакции. Дай ссылку на официальный акт и обозначь необходимость ручной проверки.";
+  const retrievalContext = isSimpleGreeting
+    ? "Пользователь отправил обычное приветствие. Ответь коротко, естественно и предложи описать семейно-правовой вопрос."
+    : legalRetrieval.context
+      ? "НАЙДЕНО ОФИЦИАЛЬНЫХ ИСТОЧНИКОВ: " + retrievedCount + " из " + legalRetrieval.sources.length + "\n\n" + legalRetrieval.context
+      : "ВНИМАНИЕ: в текущем запросе не удалось получить релевантные фрагменты официальных НПА из ИПС «Әділет». Не утверждай, что нормы проверены по действующей редакции. Дай ссылку на официальный акт и обозначь необходимость ручной проверки.";
   const doctrineContext = `ОСНОВЫ ДОГМАТИКИ СЕМЕЙНОГО ПРАВА (ОБЩИЙ УЧЕБНЫЙ КАРКАС, НЕ ЗАМЕНЯЕТ ПРОВЕРКУ НОРМ РК):
 - Предмет семейного права: личные неимущественные и имущественные отношения между супругами, родителями и детьми, а также иными членами семьи в случаях, прямо предусмотренных законом.
 - Метод регулирования сочетает императивные гарантии (обязательные требования закона, защита слабой стороны и ребёнка) и диспозитивность (возможность соглашений в установленных законом пределах).
@@ -117,11 +125,9 @@ export default async function handler(req: any, res: any) {
       const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
       const configuredModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
       // Keep the configured model first, then try stable, cost-efficient free-tier fallbacks.
-      const modelCandidates = Array.from(new Set([
-        configuredModel,
-        "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite",
-      ]));
+      const modelCandidates = Array.from(new Set(isSimpleGreeting
+        ? ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", configuredModel]
+        : [configuredModel, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]));
       let result: any = null;
       let activeModel = configuredModel;
       let providerStatus = 0;
@@ -137,11 +143,11 @@ export default async function handler(req: any, res: any) {
             const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${encodeURIComponent(geminiKey)}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              signal: AbortSignal.timeout(10000),
+              signal: AbortSignal.timeout(20000),
               body: JSON.stringify({
                 systemInstruction: { parts: [{ text: system }] },
                 contents,
-                generationConfig: { temperature: 0.2, maxOutputTokens: 4500 }
+                generationConfig: { temperature: 0.2, maxOutputTokens: isSimpleGreeting ? 220 : 3600 }
               }),
             });
             const upstreamText = await upstream.text();
@@ -177,7 +183,7 @@ export default async function handler(req: any, res: any) {
             });
             if ([400, 401, 403].includes(upstream.status)) break;
             if ([500, 502, 503, 504].includes(upstream.status) && attempt < attempts) {
-              await new Promise(resolve => setTimeout(resolve, 650));
+              await new Promise(resolve => setTimeout(resolve, 900 * attempt));
               continue;
             }
             // 404, 429 and remaining 5xx errors proceed to the next model.
