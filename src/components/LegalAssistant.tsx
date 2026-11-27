@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { assistantTextToHtml, escapeAssistantHtml } from "../utils/assistantFormatting";
+import { assistantTextToHtml } from "../utils/assistantFormatting";
 
 type Lang = "ru" | "kk";
 type SourceLink = { id: string; title: string; url: string; status: "retrieved" | "unavailable"; checkedAt: string };
@@ -98,11 +98,24 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
   }
 
   function saveAnswer(content: string) {
-    const printable = `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><title>${isKk ? "Құқықтық талдау" : "Правовой разбор"}</title><style>@page{size:A4;margin:20mm}body{font:14pt/1.55 "Times New Roman",serif;color:#172b3b}h1{font-size:18pt}pre{white-space:pre-wrap;font:inherit}</style></head><body><h1>${isKk ? "Құқықтық талдау" : "Правовой разбор"}</h1><pre>${content.replace(/[&<>]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]!))}</pre><p><small>${isKk ? "Ақпараттық материал. Заңгердің жеке қорытындысы емес." : "Информационный материал. Не является индивидуальным заключением юриста."}</small></p><script>window.onload=()=>window.print()<\\/script></body></html>`;
+    const printable = '<!doctype html><html lang="' + language + '"><head><meta charset="utf-8"><title>' + (isKk ? "Құқықтық құжат" : "Правовой документ") + '</title><style>@page{size:A4;margin:20mm 15mm 20mm 25mm}body{font:14pt/1.5 "Times New Roman",serif;color:#111}h1,h2,h3{font-size:14pt}p{text-align:justify;margin:0 0 10pt}strong{font-weight:bold}</style></head><body><h1>' + (isKk ? "Құқықтық талдау" : "Правовой разбор") + '</h1>' + assistantTextToHtml(content) + '</body></html>';
     const w = window.open("", "_blank");
-    if (!w) { setError(isKk ? "Басып шығару терезесін ашуға рұқсат беріңіз." : "Разрешите открыть окно печати."); return; }
-    w.document.write(printable);
+    if (!w) { setError(isKk ? "Басып шығару терезесін ашуға рұқсат беріңіз." : "Разрешите всплывающие окна для сохранения PDF."); return; }
+    w.document.open();
+    w.document.write(printable + '<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),300));<\/script>');
     w.document.close();
+  }
+
+  function downloadBlankSample(content: string) {
+    const blank = content.replace(/\[[^\]]+\]/g, "________________________________________");
+    const html = '<!doctype html><html lang="' + language + '"><head><meta charset="utf-8"><title>' + (isKk ? "Құжат үлгісі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ") + '</title><style>@page{size:A4;margin:20mm 15mm 20mm 25mm}body{font:14pt/1.5 "Times New Roman",serif;color:#111}h1,h2,h3{font-size:14pt}p{text-align:justify;margin:0 0 10pt}</style></head><body><h1>' + (isKk ? "Құжат үлгісі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ") + '</h1>' + assistantTextToHtml(blank) + '</body></html>';
+    const blob = new Blob(["\ufeff", html], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = isKk ? "qujat-ulgisi.doc" : "obrazec-dlya-skachivaniya.doc";
+    document.body.appendChild(anchor); anchor.click(); anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
 
   const welcomeTitle = isKk ? "Отбасы құқығы бойынша сұрағыңызды жазыңыз" : "Опишите свой вопрос по семейному праву";
@@ -145,6 +158,7 @@ export default function LegalAssistant({ language, onOpenDocuments }: { language
           <div>{message.role === "assistant" ? <div className="assistant-rich-text" dangerouslySetInnerHTML={{ __html: assistantTextToHtml(message.content) }} /> : message.content}{message.role === "assistant" && <>
             <div className="answer-actions">
               <button className="answer-print" type="button" onClick={() => saveAnswer(message.content)}>{isKk ? "PDF ретінде сақтау / басып шығару" : "Сохранить в PDF / распечатать"}</button>
+              {/(ПРОЕКТ ДОКУМЕНТА|ЖОБА ҚҰЖАТ|ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ|ТОЛТЫРУҒА АРНАЛҒАН ҮЛГІ)/i.test(message.content) && <button className="answer-print answer-download-sample" type="button" onClick={() => downloadBlankSample(message.content)}>{isKk ? "Жүктеп алуға арналған үлгі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ"}</button>}
               {/(ПРОЕКТ ДОКУМЕНТА|ЖОБА ҚҰЖАТ|ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ|ТОЛТЫРУҒА АРНАЛҒАН ҮЛГІ)/i.test(message.content) && <button className="answer-print answer-download-sample" type="button" onClick={() => downloadBlankSample(message.content)}>{isKk ? "Жүктеп алуға арналған үлгі" : "ОБРАЗЕЦ ДЛЯ СКАЧИВАНИЯ"}</button>}
               <button className="answer-print" type="button" onClick={() => copyAnswer(message.content)}>{isKk ? "Көшіру" : "Скопировать"}</button>
             </div>
