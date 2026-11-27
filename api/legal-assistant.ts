@@ -116,49 +116,108 @@ export default async function handler(req: any, res: any) {
     if (geminiKey) {
       const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
       const configuredModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
-      const modelCandidates = [configuredModel, ...(configuredModel !== "gemini-3.1-flash-lite" ? ["gemini-3.1-flash-lite"] : [])];
+      // Keep the configured model first, then try stable, cost-efficient free-tier fallbacks.
+      const modelCandidates = Array.from(new Set([
+        configuredModel,
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+      ]));
       let result: any = null;
       let activeModel = configuredModel;
       let providerStatus = 0;
       let providerCode = "";
-      for (let index = 0; index < modelCandidates.length; index++) {
+      let answered = false;
+
+      for (let index = 0; index < modelCandidates.length && !answered; index++) {
         const candidate = modelCandidates[index];
-        const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${encodeURIComponent(geminiKey)}`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: system }] },
-            contents,
-            generationConfig: { temperature: 0.2, maxOutputTokens: 4500 }
-          }),
-        });
-        const upstreamText = await upstream.text();
-        try { result = upstreamText ? JSON.parse(upstreamText) : {}; }
-        catch {
-          console.error("Gemini returned non-JSON response", { status: upstream.status, model: candidate });
-          return res.status(502).json({ error: "Gemini вернул ответ в неожиданном формате.", providerStatus: upstream.status, model: candidate });
+        // One short retry for transient server overload on the primary model only.
+        const attempts = index === 0 ? 2 : 1;
+        for (let attempt = 1; attempt <= attempts; attempt++) {
+          try {
+            const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${encodeURIComponent(geminiKey)}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              signal: AbortSignal.timeout(10000),
+              body: JSON.stringify({
+                systemInstruction: { parts: [{ text: system }] },
+                contents,
+                generationConfig: { temperature: 0.2, maxOutputTokens: 4500 }
+              }),
+            });
+            const upstreamText = await upstream.text();
+            let parsed: any;
+            try { parsed = upstreamText ? JSON.parse(upstreamText) : {}; }
+            catch {
+              providerStatus = upstream.status;
+              providerCode = "INVALID_JSON";
+              console.error("Gemini returned non-JSON response", { status: upstream.status, model: candidate });
+              break;
+            }
+
+            providerStatus = upstream.status;
+            providerCode = String(parsed?.error?.status || parsed?.error?.code || "");
+            if (upstream.ok) {
+              const answerText = parsed?.candidates?.[0]?.content?.parts
+                ?.map((part: any) => typeof part.text === "string" ? part.text : "")
+                .join("").trim();
+              if (answerText) {
+                result = parsed;
+                activeModel = candidate;
+                answered = true;
+                break;
+              }
+              providerCode = String(parsed?.promptFeedback?.blockReason || "EMPTY_RESPONSE");
+              console.error("Gemini returned no text", { model: candidate, finishReason: parsed?.candidates?.[0]?.finishReason, blockReason: parsed?.promptFeedback?.blockReason });
+              break;
+            }
+
+            console.error("Gemini API request failed", {
+              status: upstream.status, code: providerCode, model: candidate, attempt,
+              message: String(parsed?.error?.message || "").slice(0, 500)
+            });
+            if ([400, 401, 403].includes(upstream.status)) break;
+            if ([500, 502, 503, 504].includes(upstream.status) && attempt < attempts) {
+              await new Promise(resolve => setTimeout(resolve, 650));
+              continue;
+            }
+            // 404, 429 and remaining 5xx errors proceed to the next model.
+            break;
+          } catch (error) {
+            providerStatus = 0;
+            providerCode = error instanceof Error && error.name === "TimeoutError" ? "TIMEOUT" : "NETWORK_ERROR";
+            console.error("Gemini network/timeout failure", {
+              model: candidate, attempt, code: providerCode,
+              message: error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300)
+            });
+            if (attempt < attempts) {
+              await new Promise(resolve => setTimeout(resolve, 650));
+              continue;
+            }
+            break;
+          }
         }
-        providerStatus = upstream.status;
-        providerCode = String(result?.error?.status || result?.error?.code || "");
-        if (upstream.ok) { activeModel = candidate; break; }
-        console.error("Gemini API request failed", {
-          status: upstream.status, code: providerCode, model: candidate,
-          message: String(result?.error?.message || "").slice(0, 1000)
-        });
-        // Если конкретная модель недоступна для проекта, пробуем резервную модель бесплатного уровня.
-        if (upstream.status === 404 && index < modelCandidates.length - 1) continue;
+        if (!answered && [400, 401, 403].includes(providerStatus)) break;
+      }
+
+      if (!answered) {
         const errorMessage =
-          upstream.status === 401 || upstream.status === 403
-            ? "Google отклонил доступ к Gemini API. Проверьте, что ключ действителен, проект доступен для Gemini API и ключ не ограничен другим API."
-            : upstream.status === 404
-              ? "Выбранная модель Gemini недоступна этому проекту. Проверьте GEMINI_MODEL в настройках Vercel."
-              : upstream.status === 429
-                ? "Исчерпан бесплатный лимит Gemini API или достигнуто ограничение частоты запросов. Проверьте квоты проекта в Google AI Studio и повторите позже."
-                : upstream.status === 400
-                  ? "Gemini отклонил параметры запроса. Проверьте настройки модели и формат запроса."
-                  : upstream.status >= 500
-                    ? "Сервис Gemini временно недоступен. Повторите запрос позже."
-                    : "Gemini API вернул ошибку. Проверьте настройки проекта и ключа.";
-        return res.status(502).json({ error: errorMessage, providerStatus, providerCode, model: candidate });
+          providerStatus === 401 || providerStatus === 403
+            ? "Google отклонил доступ к Gemini API. Проверьте ключ и доступ проекта."
+            : providerStatus === 429
+              ? "Достигнут лимит запросов Gemini на доступных бесплатных моделях. Проверьте квоты проекта и повторите позже."
+              : providerStatus === 404
+                ? "Выбранные модели Gemini недоступны этому проекту. Проверьте доступ к моделям в Google AI Studio."
+                : providerStatus === 400
+                  ? "Gemini отклонил параметры запроса. Проверьте формат запроса."
+                  : providerCode === "TIMEOUT"
+                    ? "Gemini не ответил за отведённое время. Попробуйте ещё раз."
+                    : "Все доступные модели Gemini сейчас перегружены или временно недоступны. Попробуйте повторить запрос немного позже.";
+        return res.status(502).json({
+          error: errorMessage,
+          providerStatus: providerStatus || undefined,
+          providerCode: providerCode || undefined,
+          attemptedModels: modelCandidates
+        });
       }
       const answer = result.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("").trim();
       if (!answer) return res.status(502).json({ error: "ИИ вернул пустой ответ. Попробуйте сформулировать вопрос иначе." });
